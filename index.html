@@ -6,9 +6,9 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>環境モニター サイネージ（横長640x128 ぴったりジャスト版）</title>
+    <title>環境モニター サイネージ（縦ハミ出し完全排除版）</title>
     <style>
-        /* 画面全体の初期化（余白をゼロにし、画面外へのはみ出しを完全禁止） */
+        /* 画面全体の初期化 */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -31,7 +31,7 @@
             height: 100%;
         }
 
-        /* 各ブロック：横幅20%（128px）、高さ100%（128px）の完全固定 */
+        /* 各ブロック：横幅20%固定、縦ハミ出しを完全防御 */
         .block {
             flex: 0 0 20%; 
             width: 20%;
@@ -42,9 +42,10 @@
             border-right: 1px solid #222222;
             display: flex;
             flex-direction: column;
-            /* 💡 各要素を上下に引き伸ばさず、上詰めで配置して下部の見切れを徹底防御 */
-            justify-content: flex-start; 
-            padding: 4px 2px; 
+            /* 💡 上下「完全中央」に中身を寄せることで、上寄りを解消 */
+            justify-content: center; 
+            align-items: center;
+            padding: 2px; 
             text-align: center;
             background-color: #000000;
             transition: background-color 0.5s ease, color 0.5s ease;
@@ -54,27 +55,41 @@
             border-right: none;
         }
 
-        /* 項目タイトル（行間を極限まで詰めて高さを節約） */
+        /* 💡 タイトルエリア：横並びで時刻をドッキング */
+        .title-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 3px;
+            width: 100%;
+            margin-bottom: 2px;
+        }
         .label {
             font-size: 11px;
             font-weight: bold;
             color: #AAAAAA;
             white-space: nowrap;
             line-height: 1.0;
-            margin-bottom: 2px; /* 下の数値との隙間 */
+        }
+        /* 💡 タイトルの真横に表示する超省スペース時刻スタイル */
+        .time-mini {
+            font-size: 9px;
+            color: #888888;
+            font-family: monospace;
+            line-height: 1.0;
         }
         .text-dark { color: #111111 !important; }
         .text-light { color: #AAAAAA !important; }
+        .time-dark { color: #333333 !important; }
+        .time-light { color: #888888 !important; }
 
-        /* 数値・顔文字表示エリア（高さを絶対に食いつぶさないコンパクト設計） */
+        /* 数値・顔文字表示エリア（完全センター配置） */
         .value-container {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             width: 100%;
-            /* 💡 ここが自由に伸びるのを防ぎ、高さを制限します */
-            height: 80px; 
         }
         .value-row {
             display: flex;
@@ -83,54 +98,35 @@
             line-height: 1.0;
         }
         .value {
-            font-size: 36px; /* 128pxの高さの中で最大級に目立つサイズ */
+            font-size: 34px; /* 上下が浮いた分、綺麗に収まるサイズ */
             font-family: 'Arial Black', sans-serif;
             line-height: 1.0;
         }
         .unit {
-            font-size: 14px;
+            font-size: 13px;
             margin-left: 1px;
             line-height: 1.0;
         }
 
-        /* 巨大顔文字（数値の下にピタッと張り付くサイズ） */
+        /* 巨大顔文字 */
         .status-emoji {
-            font-size: 26px; 
+            font-size: 24px; 
             line-height: 1.0;
-            margin-top: 2px;
+            margin-top: 3px;
             display: block;
         }
 
-        /* 最下部：日付・時刻エリア */
-        .time-stamp {
-            font-size: 10px;
-            color: #CCCCCC;
-            background-color: #111111;
-            padding: 1px 0;
-            border-radius: 2px;
-            font-family: monospace;
-            white-space: nowrap;
-            width: 95%;
-            margin: auto auto 0 auto; /* 💡 これにより、必ずブロックの「最下部」にピタッと張り付きます */
-            line-height: 1.2;
-        }
-        .time-dark {
-            background-color: rgba(0,0,0,0.4) !important;
-            color: #111111 !important;
-        }
-
-        /* ⑤ ロゴ専用エリア（128px×128pxの正方形をフルに使う） */
+        /* ⑤ ロゴ専用エリア（下見切れを力づくで防衛） */
         #block-logo {
             justify-content: center;
             align-items: center;
-            /* 💡 無駄な余白を一切排除してロゴを最大化 */
             padding: 0; 
             background-color: #000000 !important;
         }
         .logo-wrapper {
-            /* 💡 128px四方の枠いっぱいに広げます */
             width: 100%;
-            height: 100%;
+            /* 💡 高さを「最大75%」にわざと制限し、下側が絶対に削られない安全圏を作ります */
+            height: 75%; 
             display: flex;
             align-items: center;
             justify-content: center;
@@ -139,8 +135,7 @@
         .logo-wrapper img {
             width: 100%;
             height: 100%;
-            /* 💡 比率を保ったまま、枠いっぱいに最大化（小さくなるのを防止） */
-            object-fit: contain; 
+            object-fit: contain; /* アスペクト比を維持して安全圏内に収める */
         }
     </style>
 </head>
@@ -148,47 +143,55 @@
 
     <div class="signage-container">
         <div class="block data-block">
-            <div class="label data-label">暑さ指数 (WBGT)</div>
+            <div class="title-row">
+                <span class="label data-label">暑さ指数</span>
+                <span class="time-mini data-time" id="time-wbgt">(--:--)</span>
+            </div>
             <div class="value-container">
                 <div class="value-row">
                     <span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span>
                 </div>
                 <span class="status-emoji" id="emoji-wbgt">――</span>
             </div>
-            <div class="time-stamp data-time" id="time-wbgt">--:--:--</div>
         </div>
 
         <div class="block data-block">
-            <div class="label data-label">気温</div>
+            <div class="title-row">
+                <span class="label data-label">気温</span>
+                <span class="time-mini data-time" id="time-kion">(--:--)</span>
+            </div>
             <div class="value-container">
                 <div class="value-row">
                     <span class="value" id="val-kion">--.-</span><span class="unit">℃</span>
                 </div>
                 <span class="status-emoji" id="emoji-kion">――</span>
             </div>
-            <div class="time-stamp data-time" id="time-kion">--:--:--</div>
         </div>
 
         <div class="block data-block">
-            <div class="label data-label">黒球温度</div>
+            <div class="title-row">
+                <span class="label data-label">黒球</span>
+                <span class="time-mini data-time" id="time-koku">(--:--)</span>
+            </div>
             <div class="value-container">
                 <div class="value-row">
                     <span class="value" id="val-koku">--.-</span><span class="unit">℃</span>
                 </div>
                 <span class="status-emoji" id="emoji-koku">――</span>
             </div>
-            <div class="time-stamp data-time" id="time-koku">--:--:--</div>
         </div>
 
         <div class="block data-block">
-            <div class="label data-label">湿度</div>
+            <div class="title-row">
+                <span class="label data-label">湿度</span>
+                <span class="time-mini data-time" id="time-shitu">(--:--)</span>
+            </div>
             <div class="value-container">
                 <div class="value-row">
                     <span class="value" id="val-shitu">--.-</span><span class="unit">%</span>
                 </div>
                 <span class="status-emoji" id="emoji-shitu">――</span>
             </div>
-            <div class="time-stamp data-time" id="time-shitu">--:--:--</div>
         </div>
 
         <div class="block" id="block-logo">
@@ -229,26 +232,27 @@
                     document.getElementById('val-koku').textContent = current.Koku ? Number(current.Koku).toFixed(1) : '--.-';
                     document.getElementById('val-shitu').textContent = current.Shitu ? Number(current.Shitu).toFixed(1) : '--.-';
 
-                    // 2. 時刻セット（時:分:秒 のみ）
-                    let timeString = '――:――';
+                    // 2. タイトル横の時刻セット（省スペース用に 分 までの「時:分」に短縮）
+                    let timeString = '(--:--)';
                     if (current.Time) {
                         const parts = current.Time.split(' ');
                         if (parts.length > 1) {
-                            timeString = parts[1];
-                        } else {
-                            timeString = current.Time;
+                            const hm = parts[1].split(':');
+                            if (hm.length > 1) timeString = `(${hm[0]}:${hm[1]})`;
                         }
                     }
                     document.getElementById('time-wbgt').textContent = timeString;
                     document.getElementById('time-kion').textContent = timeString;
-                    document.getElementById('time-koku').textContent = timeString;
                     document.getElementById('time-shitu').textContent = timeString;
+                    // ※黒球温度の時刻ID不一致バグもここでついでに修正して完全同期
+                    const kokuTimeEl = document.getElementById('time-koku');
+                    if (kokuTimeEl) kokuTimeEl.textContent = timeString;
 
                     // 3. アラート定義
                     let bgColor = '#000000';
                     let textColor = '#FFFFFF';
                     let labelColorClass = 'text-light';
-                    let timeColorClass = '';
+                    let timeColorClass = 'time-light';
                     let currentEmoji = '――';
 
                     if (current.Wbgt) {
@@ -270,7 +274,7 @@
                         }
                     }
 
-                    // 4. 各要素への一斉適用
+                    // 4. 一斉適用
                     const blocks = document.querySelectorAll('.data-block');
                     const labels = document.querySelectorAll('.data-label');
                     const times = document.querySelectorAll('.data-time');
@@ -286,11 +290,8 @@
                     });
 
                     times.forEach(t => {
-                        if (timeColorClass) {
-                            t.classList.add('time-dark');
-                        } else {
-                            t.classList.remove('time-dark');
-                        }
+                        lName = t.className.split(' ')[0];
+                        t.className = lName + ' data-time ' + timeColorClass;
                     });
 
                     emojis.forEach(e => {
