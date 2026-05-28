@@ -2,44 +2,401 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>工事現場用 WBGTモニタ</title>
+    <title>WBGT環境モニター（数値最優先・現場指針版）</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial Black', 'Hiragino Kaku Gothic ProN', sans-serif; }
-        body { background: #000; width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        
-        .container { display: flex; width: 640px; height: 128px; border: 2px solid #555; }
-        .block { flex: 1; border-right: 1px solid #555; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2px; color: #fff; }
-        .block:last-child { border-right: none; }
-        
-        .label { font-size: 10px; color: #ccc; margin-bottom: 2px; }
-        .value { font-size: 32px; font-weight: bold; }
-        .status { font-size: 14px; font-weight: 900; background: #fff; color: #000; padding: 0 4px; border-radius: 2px; margin: 2px 0; }
-        .time { font-size: 9px; color: #aaa; }
+        /* 画面全体の初期化 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #000000;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+        }
+
+        /* 640x128 ぴったり絶対固定 */
+        .signage-container {
+            display: flex;
+            width: 640px !important;
+            height: 128px !important;
+            min-width: 640px !important;
+            max-width: 640px !important;
+            min-height: 128px !important;
+            max-height: 128px !important;
+            background-color: #000000;
+            overflow: hidden;
+        }
+
+        /* 128px × 128px の正方形ブロック */
+        .block {
+            flex: 0 0 128px !important; 
+            width: 128px !important;
+            height: 128px !important;
+            border-right: 1px solid #222222;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; 
+            padding: 6px 3px; 
+            text-align: center;
+            background-color: #000000;
+            color: #FFFFFF;
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            transition: background-color 0.4s ease, color 0.4s ease;
+            overflow: hidden;
+        }
+        .block:last-child {
+            border-right: none;
+        }
+
+        /* 項目タイトル */
+        .label {
+            font-size: 11px;
+            font-weight: bold;
+            color: #AAAAAA;
+            white-space: nowrap;
+            line-height: 1.0;
+        }
+        .text-dark { color: #111111 !important; }
+        .text-light { color: #AAAAAA !important; }
+
+        /* 数値と顔グラフィックの横並びメインエリア */
+        .main-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            width: 100%;
+            height: 54px;
+        }
+        .value-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .value-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            line-height: 1.0;
+        }
+        .value {
+            font-size: 32px; /* 128px幅で顔と横並びできる最大クッキリサイズ */
+            font-family: 'Arial Black', sans-serif;
+            line-height: 1.0;
+        }
+        .unit {
+            font-size: 12px;
+            margin-left: 1px;
+            line-height: 1.0;
+        }
+
+        /* 高画質化された作業員SVGの配置枠 */
+        .worker-avatar-box {
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .worker-avatar-box svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 最下部：ステータス文字と時計の同居エリア */
+        .bottom-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 96%;
+            margin: 0 auto;
+            background-color: rgba(17, 17, 17, 0.8);
+            padding: 2px 4px;
+            border-radius: 3px;
+            height: 18px;
+        }
+        .bottom-dark {
+            background-color: rgba(0, 0, 0, 0.2) !important;
+        }
+        /* 💡 ほぼ安全・注意 などの判定文字 */
+        .status-text {
+            font-size: 10px;
+            font-weight: bold;
+            white-space: nowrap;
+            line-height: 1.0;
+        }
+        /* 💡 リアルタイム時計 */
+        .time-stamp {
+            font-size: 9px;
+            font-family: monospace;
+            white-space: nowrap;
+            line-height: 1.0;
+            color: #CCCCCC;
+        }
+        .time-dark { color: #111111 !important; }
+        .time-light { color: #CCCCCC !important; }
+
+        /* ⑤ 正方形ロゴ */
+        #block-logo {
+            padding: 0 !important; 
+            background-color: #000000 !important;
+            justify-content: center;
+            align-items: center;
+        }
+        .logo-wrapper {
+            width: 128px !important;
+            height: 128px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .logo-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
     </style>
 </head>
 <body>
-    <div class="container" id="main-cont">
-        <div class="block" id="block-wbgt">
-            <div class="label">WBGT</div>
-            <div class="value" id="val-wbgt">--.-</div>
-            <div class="status" id="stat-wbgt">---</div>
-            <div class="time" id="time-now">--:--:--</div>
+
+    <div class="signage-container">
+        <div class="block data-block">
+            <div class="label data-label">暑さ指数 (WBGT)</div>
+            <div class="main-display">
+                <div class="value-container">
+                    <div class="value-row">
+                        <span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span>
+                    </div>
+                </div>
+                <div class="worker-avatar-box" id="worker-avatar"></div>
+            </div>
+            <div class="bottom-row" id="bottom-wbgt">
+                <span class="status-text" id="status-wbgt">――</span>
+                <span class="time-stamp data-time" id="time-wbgt">00:00:00</span>
+            </div>
         </div>
+
+        <div class="block data-block">
+            <div class="label data-label">気温</div>
+            <div class="main-display">
+                <div class="value-container">
+                    <div class="value-row">
+                        <span class="value" id="val-kion">--.-</span><span class="unit">℃</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bottom-row" id="bottom-kion">
+                <span class="status-text" id="status-kion">――</span>
+                <span class="time-stamp data-time" id="time-kion">00:00:00</span>
+            </div>
         </div>
+
+        <div class="block data-block">
+            <div class="label data-label">黒球温度</div>
+            <div class="main-display">
+                <div class="value-container">
+                    <div class="value-row">
+                        <span class="value" id="val-koku">--.-</span><span class="unit">℃</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bottom-row" id="bottom-koku">
+                <span class="status-text" id="status-koku">――</span>
+                <span class="time-stamp data-time" id="time-koku">00:00:00</span>
+            </div>
+        </div>
+
+        <div class="block data-block">
+            <div class="label data-label">湿度</div>
+            <div class="main-display">
+                <div class="value-container">
+                    <div class="value-row">
+                        <span class="value" id="val-shitu">--.-</span><span class="unit">%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bottom-row" id="bottom-shitu">
+                <span class="status-text" id="status-shitu">――</span>
+                <span class="time-stamp data-time" id="time-shitu">00:00:00</span>
+            </div>
+        </div>
+
+        <div class="block" id="block-logo">
+            <div class="logo-wrapper">
+                <img src="logo.png" alt="ロゴ">
+            </div>
+        </div>
+    </div>
 
     <script>
-        // URL変更を行わず、15秒ごとのリロードは標準的なものに戻します
-        setInterval(() => { window.location.reload(true); }, 15000);
+        const baseUrl = 'https://www2.edam.ne.jp/Json/WBGTNumData/2452';
 
-        async function update() {
-            // ... (データ取得処理)
-            // 判定に応じて背景色を厳格に変更
-            // 例: if(wbgt >= 32) { block.style.background = "#d00"; status.innerText = "危 険"; }
+        // 高画質化したヘルメット作業員のパーツ共通定義
+        const svgHeader = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">`;
+        const svgFooter = `</svg>`;
+        const workerBase = `
+            <circle cx="50" cy="55" r="34" fill="#FFE5A3" stroke="#111111" stroke-width="3"/>
+            <path d="M14 45 C 14 12, 86 12, 86 45 Z" fill="#FFF275" stroke="#111111" stroke-width="3"/>
+            <path d="M10 44 C 10 40, 90 40, 90 44 C 90 48, 10 48, 10 44 Z" fill="#FFF275" stroke="#111111" stroke-width="2.5"/>
+            <rect x="46" y="22" width="8" height="14" fill="#009944"/>
+            <rect x="43" y="25" width="14" height="8" fill="#009944"/>
+            <circle cx="15" cy="58" r="5" fill="#FFE5A3" stroke="#111111" stroke-width="2"/>
+            <circle cx="85" cy="58" r="5" fill="#FFE5A3" stroke="#111111" stroke-width="2"/>
+        `;
+
+        const faceExpressions = {
+            safe: workerBase + `
+                <path d="M32 58 Q 37 52 42 58" fill="none" stroke="#111111" stroke-width="3" stroke-linecap="round"/>
+                <path d="M58 58 Q 63 52 68 58" fill="none" stroke="#111111" stroke-width="3" stroke-linecap="round"/>
+                <path d="M42 72 Q 50 80 58 72" fill="none" stroke="#111111" stroke-width="3" stroke-linecap="round"/>
+            `,
+            warn: workerBase + `
+                <circle cx="37" cy="58" r="3.5" fill="#111111"/>
+                <circle cx="63" cy="58" r="3.5" fill="#111111"/>
+                <line x1="44" y1="74" x2="56" y2="74" stroke="#111111" stroke-width="3" stroke-linecap="round"/>
+                <path d="M24 64 C22 64 21 66 22 68 C23 70 25 70 26 68 C27 66 26 64 24 64 Z" fill="#33CCFF"/>
+            `,
+            alert: workerBase + `
+                <path d="M32 56 L 42 60" stroke="#111111" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M68 56 L 58 60" stroke="#111111" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M42 76 Q 50 68 58 76" fill="none" stroke="#111111" stroke-width="3" stroke-linecap="round"/>
+                <path d="M22 62 C20 62 19 64 20 66 C21 68 23 68 24 66 Z" fill="#33CCFF"/>
+                <path d="M78 65 C76 65 75 67 76 69 C77 71 79 71 80 69 Z" fill="#33CCFF"/>
+            `,
+            severe: workerBase + `
+                <path d="M32 54 L 40 62 M 40 54 L 32 62" stroke="#111111" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M60 54 L 68 62 M 68 54 L 60 62" stroke="#111111" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M40 74 L 44 71 L 48 74 L 52 71 L 56 74 L 60 71" fill="none" stroke="#111111" stroke-width="3" stroke-linecap="round"/>
+                <path d="M19 68 C20 70 23 70 23 68 Z" fill="#33CCFF"/>
+                <path d="M23 79 C24 81 27 81 27 79 Z" fill="#33CCFF"/>
+                <path d="M74 71 C75 73 78 73 78 71 Z" fill="#33CCFF"/>
+            `,
+            danger: workerBase + `
+                <path d="M33 55 L 33 63 M 39 55 L 39 63" stroke="#111111" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M61 55 L 61 63 M 67 55 L 67 63" stroke="#111111" stroke-width="3.5" stroke-linecap="round"/>
+                <circle cx="50" cy="75" r="6" fill="none" stroke="#111111" stroke-width="3"/>
+                <path d="M20 68 C21 70 23 70 24 68 Z" fill="#33CCFF"/>
+                <path d="M22 79 C23 81 25 81 26 79 Z" fill="#33CCFF"/>
+                <path d="M73 68 C74 70 76 70 77 68 Z" fill="#33CCFF"/>
+                <path d="M75 79 C76 81 78 81 79 79 Z" fill="#33CCFF"/>
+            `
+        };
+
+        // リアルタイム時計（1秒周期）
+        function updateClock() {
+            const now = new Date();
+            const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            document.querySelectorAll('.time-stamp').forEach(el => el.textContent = timeString);
         }
-        update();
+
+        // データ取得＆判定ロジック（10秒周期）
+        async function updateSignageData() {
+            try {
+                const timeStamp = new Date().getTime();
+                const targetUrl = baseUrl + '?r=' + timeStamp;
+                const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl) + '&nocache=' + timeStamp;
+
+                const response = await fetch(proxyUrl, {
+                    cache: 'no-store',
+                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+                });
+                if (!response.ok) throw new Error('通信エラー');
+                const data = await response.json();
+                
+                if (data && data.length > 0) {
+                    const current = data[0];
+                    const wbgtVal = current.Wbgt ? Number(current.Wbgt) : 0;
+
+                    // 💡 【重要】すべての数値を絶対に消さずに画面中央へ表示
+                    document.getElementById('val-wbgt').textContent = current.Wbgt ? wbgtVal.toFixed(1) : '--.-';
+                    document.getElementById('val-kion').textContent = current.Kion ? Number(current.Kion).toFixed(1) : '--.-';
+                    document.getElementById('val-koku').textContent = current.Koku ? Number(current.Koku).toFixed(1) : '--.-';
+                    document.getElementById('val-shitu').textContent = current.Shitu ? Number(current.Shitu).toFixed(1) : '--.-';
+
+                    // 画像の基準温度を再現する条件分岐
+                    let bgColor = '#4A6B75';       // ほぼ安全
+                    let textColor = '#FFFFFF';
+                    let labelColorClass = 'text-light';
+                    let isDark = false;
+                    let txt = 'ほぼ安全';
+                    let svgKey = 'safe';
+
+                    if (current.Wbgt) {
+                        if (wbgtVal >= 32.0) {
+                            bgColor = '#FF3333';   // 危険
+                            txt = '危　険';
+                            svgKey = 'danger';
+                        } else if (wbgtVal >= 29.0) {
+                            bgColor = '#D47A2A';   // 厳重警戒
+                            txt = '厳重警戒';
+                            svgKey = 'severe';
+                        } else if (wbgtVal >= 26.0) {
+                            bgColor = '#88A848';   // 警戒
+                            txt = '警　戒';
+                            svgKey = 'alert';
+                        } else if (wbgtVal >= 22.0) {
+                            bgColor = '#99FF66';   // 注意
+                            textColor = '#111111'; 
+                            labelColorClass = 'text-dark';
+                            isDark = true;
+                            txt = '注　意';
+                            svgKey = 'warn';
+                        }
+                    }
+
+                    // ①番ブロックへ高画質顔グラフィックを注入
+                    document.getElementById('worker-avatar').innerHTML = svgHeader + faceExpressions[svgKey] + svgFooter;
+
+                    // 全ブロックに文字（注意・警戒など）を一斉適用
+                    document.getElementById('status-wbgt').textContent = txt;
+                    document.getElementById('status-kion').textContent = txt;
+                    document.getElementById('status-koku').textContent = txt;
+                    document.getElementById('status-shitu').textContent = txt;
+
+                    // 背景色・文字色の適用
+                    document.querySelectorAll('.data-block').forEach(b => {
+                        b.style.backgroundColor = bgColor;
+                        b.style.color = textColor;
+                    });
+                    document.querySelectorAll('.data-label').forEach(l => {
+                        l.className = 'label data-label ' + labelColorClass;
+                    });
+
+                    // 下部エリアの微調整（注意の時だけ黒文字に合わせる）
+                    document.querySelectorAll('.bottom-row').forEach(row => {
+                        if (isDark) {
+                            row.classList.add('bottom-dark');
+                        } else {
+                            row.classList.remove('bottom-dark');
+                        }
+                    });
+                    document.querySelectorAll('.time-stamp').forEach(t => {
+                        t.className = 'time-stamp ' + (isDark ? 'time-dark' : 'time-light');
+                    });
+                }
+            } catch (error) {
+                console.error('データ更新失敗:', error);
+            }
+        }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        updateSignageData();
+        setInterval(updateSignageData, 10000); 
     </script>
 </body>
 </html>
