@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>環境モニター サイネージ</title>
     <style>
-        /* 画面全体の初期化 */
+        /* 画面全体の初期化（スクロールバー非表示、黒背景） */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -21,21 +21,21 @@
             display: flex;
         }
 
-        /* 5分割のコンテナ */
+        /* 1:5 の横長比率を保つためのコンテナ */
         .signage-container {
             display: flex;
             width: 100%;
             height: 100%;
         }
 
-        /* 各エリアの共通スタイル（均等5分割） */
+        /* 各エリア（①〜⑤）の共通スタイル（均等5分割） */
         .block {
             flex: 1;
             height: 100%;
-            border-right: 2px solid #222222;
+            border-right: 2px solid #222222; /* 焼き付き防止用の境界線 */
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: space-between; /* 上部に数値、下部に時刻を固定 */
             padding: 4vh 2vw;
             text-align: center;
         }
@@ -147,88 +147,60 @@
     </div>
 
     <script>
-        // 確実に取得できることがログで確認できた「人間用の元URL」に戻します
-        const targetUrl = 'https://www2.edam.ne.jp/Public/00574/Sokutei/WBGT?LoID=2452'; 
-        const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
+        // 【特定成功】ユーザー様に見つけていただいた本物のデータ通信先ベースURL
+        const baseUrl = 'https://www2.edam.ne.jp/Json/WBGTNumData/2452';
 
         async function updateSignageData() {
             try {
+                // 相手サーバーのキャッシュを完全に回避するため、アクセス毎に異なる数字（タイムスタンプ）を末尾に自動付与
+                const cacheBuster = '?r=' + new Date().getTime();
+                const targetUrl = baseUrl + cacheBuster;
+                
+                // CORSプロキシを経由してAPIにダイレクトアタック
+                const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
+                
                 const response = await fetch(proxyUrl);
                 if (!response.ok) throw new Error('ネットワーク応答が正常ではありません');
                 
-                const resText = await response.text();
+                // 100%綺麗なJSONが返ってくるため、そのままパース
+                const data = await response.json();
                 
-                // 【超究極パース】
-                // JSONキーワード（TimeやWbgt）に依存せず、HTMLソース内の「中括弧 { } で囲まれた塊」をすべて全スキャンして、
-                // 中にデータ（WbgtやTime、数字など）が入っている部分を力づくでこじ開けて解析します。
-                const braceMatches = resText.match(/\{[^{}]*?\}/g);
-                if (!braceMatches) throw new Error('ソース内からデータブロックが検出できませんでした');
+                if (data && data.length > 0) {
+                    const current = data[0];
 
-                let parsedData = null;
+                    // 各数値を画面に反映
+                    document.getElementById('val-wbgt').textContent = current.Wbgt ? Number(current.Wbgt).toFixed(1) : '--.-';
+                    document.getElementById('val-kion').textContent = current.Kion ? Number(current.Kion).toFixed(1) : '--.-';
+                    document.getElementById('val-koku').textContent = current.Koku ? Number(current.Koku).toFixed(1) : '--.-';
+                    document.getElementById('val-shitu').textContent = current.Shitu ? Number(current.Shitu).toFixed(1) : '--.-';
 
-                for (let block of braceMatches) {
-                    // 焼き付き対策も含め、大文字小文字を問わずキーが含まれているかチェック
-                    if (block.toLowerCase().includes('wbgt') || block.toLowerCase().includes('time')) {
-                        try {
-                            // もし前後に余計な文字がくっついていたらトリムしてパースを試みる
-                            const cleanBlock = block.trim();
-                            const obj = JSON.parse(cleanBlock);
-                            // 必要なプロパティが1つでもあれば採用
-                            if (obj.Wbgt || obj.Kion || obj.Time) {
-                                parsedData = obj;
-                                break;
-                            }
-                        } catch(e) {
-                            // パース失敗した単なるJSコードのブロックはスルーして次を探す
-                            continue;
-                        }
+                    // 日付・時刻を反映
+                    const currentTimeString = current.Time || '----/--/-- --:--:--';
+                    document.getElementById('time-wbgt').textContent = currentTimeString;
+                    document.getElementById('time-kion').textContent = currentTimeString;
+                    document.getElementById('time-koku').textContent = currentTimeString;
+                    document.getElementById('time-shitu').textContent = currentTimeString;
+
+                    // WBGTの数値に基づいた、焼き付きを起こしにくい深めのアラート背景色
+                    const wbgtBlock = document.getElementById('block-wbgt');
+                    const wbgtVal = Number(current.Wbgt);
+                    if (wbgtVal >= 31.0) {
+                        wbgtBlock.style.backgroundColor = '#660000'; // 危険（深赤）
+                    } else if (wbgtVal >= 28.0) {
+                        wbgtBlock.style.backgroundColor = '#553300'; // 厳重警戒（深橙）
+                    } else {
+                        wbgtBlock.style.backgroundColor = '#000000'; // 通常（黒）
                     }
                 }
-
-                // 2段目の防衛策：もし配列型の中に直接埋め込まれていた場合 `[{...}]`
-                if (!parsedData) {
-                    const arrayMatch = resText.match(/\[\s*\{[\s\S]*?\}\s*\]/);
-                    if (arrayMatch) {
-                        try {
-                            const arr = JSON.parse(arrayMatch[0]);
-                            if (arr && arr.length > 0) parsedData = arr[0];
-                        } catch(e) {}
-                    }
-                }
-
-                // それでもダメなら例外を投げる
-                if (!parsedData) throw new Error('有効な環境データオブジェクトを抽出できませんでした');
-
-                // --- 画面へのデータ反映処理 ---
-                document.getElementById('val-wbgt').textContent = parsedData.Wbgt ? Number(parsedData.Wbgt).toFixed(1) : '--.-';
-                document.getElementById('val-kion').textContent = parsedData.Kion ? Number(parsedData.Kion).toFixed(1) : '--.-';
-                document.getElementById('val-koku').textContent = parsedData.Koku ? Number(parsedData.Koku).toFixed(1) : '--.-';
-                document.getElementById('val-shitu').textContent = parsedData.Shitu ? Number(parsedData.Shitu).toFixed(1) : '--.-';
-
-                const currentTimeString = parsedData.Time || '----/--/-- --:--:--';
-                document.getElementById('time-wbgt').textContent = currentTimeString;
-                document.getElementById('time-kion').textContent = currentTimeString;
-                document.getElementById('time-koku').textContent = currentTimeString;
-                document.getElementById('time-shitu').textContent = currentTimeString;
-
-                // 背景アラート色
-                const wbgtBlock = document.getElementById('block-wbgt');
-                const wbgtVal = Number(parsedData.Wbgt);
-                if (wbgtVal >= 31.0) {
-                    wbgtBlock.style.backgroundColor = '#660000';
-                } else if (wbgtVal >= 28.0) {
-                    wbgtBlock.style.backgroundColor = '#553300';
-                } else {
-                    wbgtBlock.style.backgroundColor = '#000000';
-                }
-
             } catch (error) {
                 console.error('データ取得または解析エラー:', error);
             }
         }
 
-        // 即時実行と10秒自動ループ
+        // ページを読み込んだ瞬間に1回目を実行
         updateSignageData();
+        
+        // 【10秒おき】超高頻度のリアルタイム自動更新をバックグラウンドでループ実行
         setInterval(updateSignageData, 10000); 
     </script>
 </body>
