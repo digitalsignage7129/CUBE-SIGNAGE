@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>環境モニター サイネージ（640x128絶対固定版）</title>
+    <title>WBGT環境モニター（現場指針再現版）</title>
     <style>
         /* 画面全体の初期化 */
         * {
@@ -14,8 +14,6 @@
             margin: 0;
             padding: 0;
         }
-        
-        /* 💡 画面全体がどうであれ、背景は完全な黒にしてハミ出しを隠す */
         body {
             background-color: #000000;
             overflow: hidden;
@@ -26,7 +24,7 @@
             align-items: flex-start;
         }
 
-        /* 💡 【今回の核心】サイトのサイズ自体を「横640px × 縦128px」に完全固定！ */
+        /* 640x128 ぴったり絶対固定 */
         .signage-container {
             display: flex;
             width: 640px !important;
@@ -39,29 +37,59 @@
             overflow: hidden;
         }
 
-        /* 各ブロック：128px × 128px の完全な正方形を5つ作る */
+        /* 128px × 128px の正方形ブロック */
         .block {
             flex: 0 0 128px !important; 
             width: 128px !important;
             height: 128px !important;
-            
             border-right: 1px solid #222222;
             display: flex;
             flex-direction: column;
-            justify-content: space-between; /* 上にタイトル、真ん中に数値、下に時刻 */
-            padding: 6px 2px; 
+            justify-content: space-between; 
+            padding: 6px 4px; 
             text-align: center;
             background-color: #000000;
             color: #FFFFFF;
             font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
-            transition: background-color 0.5s ease, color 0.5s ease;
+            transition: background-color 0.4s ease, color 0.4s ease;
             overflow: hidden;
         }
         .block:last-child {
             border-right: none;
         }
 
-        /* 項目タイトル */
+        /* ① WBGT（ここだけレイアウトが変化します） */
+        .wbgt-main-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 62px;
+            gap: 4px;
+        }
+        /* 高画質化された作業員SVGの配置枠 */
+        .worker-avatar-box {
+            width: 52px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .worker-avatar-box svg {
+            width: 100%;
+            height: 100%;
+        }
+        /* 「注意」などの4文字または2文字のステータステキスト */
+        .status-text {
+            font-size: 15px;
+            font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: 1px;
+            width: 64px;
+            text-align: center;
+        }
+
+        /* 通常のタイトルラベル */
         .label {
             font-size: 11px;
             font-weight: bold;
@@ -72,7 +100,7 @@
         .text-dark { color: #111111 !important; }
         .text-light { color: #AAAAAA !important; }
 
-        /* 数値・顔文字エリア（128x128のド真ん中に配置） */
+        /* 数値表示エリア */
         .value-container {
             flex-grow: 1;
             display: flex;
@@ -87,7 +115,7 @@
             line-height: 1.0;
         }
         .value {
-            font-size: 34px;
+            font-size: 36px;
             font-family: 'Arial Black', sans-serif;
             line-height: 1.0;
         }
@@ -97,15 +125,7 @@
             line-height: 1.0;
         }
 
-        /* 巨大顔文字 */
-        .status-emoji {
-            font-size: 24px; 
-            line-height: 1.0;
-            margin-top: 3px;
-            display: block;
-        }
-
-        /* 最下部：時刻エリア */
+        /* 最下部：リアルタイム時計 */
         .time-stamp {
             font-size: 10px;
             color: #CCCCCC;
@@ -114,16 +134,16 @@
             border-radius: 2px;
             font-family: monospace;
             white-space: nowrap;
-            width: 90%;
+            width: 92%;
             margin: 0 auto;
             line-height: 1.1;
         }
         .time-dark {
-            background-color: rgba(0,0,0,0.4) !important;
+            background-color: rgba(0,0,0,0.3) !important;
             color: #111111 !important;
         }
 
-        /* ⑤ ロゴ専用エリア（128px×128pxの正方形をフルに使う） */
+        /* ⑤ 正方形ロゴ */
         #block-logo {
             padding: 0 !important; 
             background-color: #000000 !important;
@@ -141,22 +161,20 @@
         .logo-wrapper img {
             width: 100%;
             height: 100%;
-            object-fit: contain; /* 正方形の中に最大サイズで綺麗に収める */
+            object-fit: contain;
         }
     </style>
 </head>
 <body>
 
     <div class="signage-container">
-        <div class="block data-block">
+        <div class="block data-block" id="block-wbgt">
             <div class="label data-label">暑さ指数 (WBGT)</div>
-            <div class="value-container">
-                <div class="value-row">
-                    <span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span>
-                </div>
-                <span class="status-emoji" id="emoji-wbgt">――</span>
+            <div class="wbgt-main-box">
+                <div class="worker-avatar-box" id="worker-avatar"></div>
+                <div class="status-text" id="status-label">――</div>
             </div>
-            <div class="time-stamp data-time" id="time-wbgt">--:--:--</div>
+            <div class="time-stamp data-time" id="time-wbgt">00:00:00</div>
         </div>
 
         <div class="block data-block">
@@ -165,9 +183,8 @@
                 <div class="value-row">
                     <span class="value" id="val-kion">--.-</span><span class="unit">℃</span>
                 </div>
-                <span class="status-emoji" id="emoji-kion">――</span>
             </div>
-            <div class="time-stamp data-time" id="time-kion">--:--:--</div>
+            <div class="time-stamp data-time" id="time-kion">00:00:00</div>
         </div>
 
         <div class="block data-block">
@@ -176,9 +193,8 @@
                 <div class="value-row">
                     <span class="value" id="val-koku">--.-</span><span class="unit">℃</span>
                 </div>
-                <span class="status-emoji" id="emoji-koku">――</span>
             </div>
-            <div class="time-stamp data-time" id="time-koku">--:--:--</div>
+            <div class="time-stamp data-time" id="time-koku">00:00:00</div>
         </div>
 
         <div class="block data-block">
@@ -187,9 +203,8 @@
                 <div class="value-row">
                     <span class="value" id="val-shitu">--.-</span><span class="unit">%</span>
                 </div>
-                <span class="status-emoji" id="emoji-shitu">――</span>
             </div>
-            <div class="time-stamp data-time" id="time-shitu">--:--:--</div>
+            <div class="time-stamp data-time" id="time-shitu">00:00:00</div>
         </div>
 
         <div class="block" id="block-logo">
@@ -202,6 +217,66 @@
     <script>
         const baseUrl = 'https://www2.edam.ne.jp/Json/WBGTNumData/2452';
 
+        // 💡 高画質化したヘルメット作業員のパーツ共通定義
+        const svgHeader = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">`;
+        const svgFooter = `</svg>`;
+        const workerBase = `
+            <circle cx="50" cy="55" r="34" fill="#FFE5A3" stroke="#111111" stroke-width="3"/>
+            <path d="M14 45 C 14 12, 86 12, 86 45 Z" fill="#FFF275" stroke="#111111" stroke-width="3"/>
+            <path d="M10 44 C 10 40, 90 40, 90 44 C 90 48, 10 48, 10 44 Z" fill="#FFF275" stroke="#111111" stroke-width="2.5"/>
+            <rect x="46" y="22" width="8" height="14" fill="#009944"/>
+            <rect x="43" y="25" width="14" height="8" fill="#009944"/>
+            <circle cx="15" cy="58" r="5" fill="#FFE5A3" stroke="#111111" stroke-width="2"/>
+            <circle cx="85" cy="58" r="5" fill="#FFE5A3" stroke="#111111" stroke-width="2"/>
+        `;
+
+        // 💡 5段階の「目・口・汗」のベクターパーツ定義
+        const faceExpressions = {
+            safe: workerBase + `
+                <path d="M32 58 Q 37 52 42 58" fill="none" stroke="#111111" stroke-width="3" stroke-linecap="round"/>
+                <path d="M58 58 Q 63 52 68 58" fill="none" stroke="#111111" stroke-width="3" stroke-linecap="round"/>
+                <path d="M42 72 Q 50 80 58 72" fill="none" stroke="#111111" stroke-width="3" stroke-linecap="round"/>
+            `,
+            warn: workerBase + `
+                <circle cx="37" cy="58" r="3.5" fill="#111111"/>
+                <circle cx="63" cy="58" r="3.5" fill="#111111"/>
+                <line x1="44" y1="74" x2="56" y2="74" stroke="#111111" stroke-width="3" stroke-linecap="round"/>
+                <path d="M24 64 C22 64 21 66 22 68 C23 70 25 70 26 68 C27 66 26 64 24 64 Z" fill="#33CCFF"/>
+            `,
+            alert: workerBase + `
+                <path d="M32 56 L 42 60" stroke="#111111" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M68 56 L 58 60" stroke="#111111" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M42 76 Q 50 68 58 76" fill="none" stroke="#111111" stroke-width="3" stroke-linecap="round"/>
+                <path d="M22 62 C20 62 19 64 20 66 C21 68 23 68 24 66 Z" fill="#33CCFF"/>
+                <path d="M78 65 C76 65 75 67 76 69 C77 71 79 71 80 69 Z" fill="#33CCFF"/>
+            `,
+            severe: workerBase + `
+                <path d="M32 54 L 40 62 M 40 54 L 32 62" stroke="#111111" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M60 54 L 68 62 M 68 54 L 60 62" stroke="#111111" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M40 74 L 44 71 L 48 74 L 52 71 L 56 74 L 60 71" fill="none" stroke="#111111" stroke-width="3" stroke-linecap="round"/>
+                <path d="M21 62 C19 62 18 65 19 68 C20 70 23 70 23 68 Z" fill="#33CCFF"/>
+                <path d="M25 74 C23 74 22 76 23 79 C24 81 27 81 27 79 Z" fill="#33CCFF"/>
+                <path d="M76 66 C74 66 73 68 74 71 C75 73 78 73 78 71 Z" fill="#33CCFF"/>
+            `,
+            danger: workerBase + `
+                <path d="M33 55 L 33 63 M 39 55 L 39 63" stroke="#111111" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M61 55 L 61 63 M 67 55 L 67 63" stroke="#111111" stroke-width="3.5" stroke-linecap="round"/>
+                <circle cx="50" cy="75" r="6" fill="none" stroke="#111111" stroke-width="3"/>
+                <path d="M22 62 C20 62 19 65 20 68 C21 70 23 70 24 68 Z" fill="#33CCFF"/>
+                <path d="M24 74 C22 74 21 76 22 79 C23 81 25 81 26 79 Z" fill="#33CCFF"/>
+                <path d="M75 62 C73 62 72 65 73 68 C74 70 76 70 77 68 Z" fill="#33CCFF"/>
+                <path d="M77 74 C75 74 74 76 75 79 C76 81 78 81 79 79 Z" fill="#33CCFF"/>
+            `
+        };
+
+        // リアルタイム時計機能（1秒周期）
+        function updateClock() {
+            const now = new Date();
+            const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            document.querySelectorAll('.data-time').forEach(el => el.textContent = timeString);
+        }
+
+        // データ同期＆判定ロジック（10秒周期）
         async function updateSignageData() {
             try {
                 const timeStamp = new Date().getTime();
@@ -210,98 +285,75 @@
 
                 const response = await fetch(proxyUrl, {
                     cache: 'no-store',
-                    headers: {
-                        'Cache-Control': 'no-cache',
-                        'Pragma': 'no-cache'
-                    }
+                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
                 });
-                
-                if (!response.ok) throw new Error('ネットワーク応答が正常ではありません');
-                
+                if (!response.ok) throw new Error('通信エラー');
                 const data = await response.json();
                 
                 if (data && data.length > 0) {
                     const current = data[0];
                     const wbgtVal = current.Wbgt ? Number(current.Wbgt) : 0;
 
-                    // 1. 数値セット
-                    document.getElementById('val-wbgt').textContent = current.Wbgt ? wbgtVal.toFixed(1) : '--.-';
+                    // 気温・黒球・湿度のテキストを反映（①番のWBGTブロックはレイアウトが違うので別処理）
                     document.getElementById('val-kion').textContent = current.Kion ? Number(current.Kion).toFixed(1) : '--.-';
                     document.getElementById('val-koku').textContent = current.Koku ? Number(current.Koku).toFixed(1) : '--.-';
                     document.getElementById('val-shitu').textContent = current.Shitu ? Number(current.Shitu).toFixed(1) : '--.-';
 
-                    // 2. 時刻セット（時:分:秒 のみ）
-                    let timeString = '――:――';
-                    if (current.Time) {
-                        const parts = current.Time.split(' ');
-                        if (parts.length > 1) {
-                            timeString = parts[1];
-                        } else {
-                            timeString = current.Time;
-                        }
-                    }
-                    document.getElementById('time-wbgt').textContent = timeString;
-                    document.getElementById('time-kion').textContent = timeString;
-                    document.getElementById('time-koku').textContent = timeString;
-                    document.getElementById('time-shitu').textContent = timeString;
-
-                    // 3. アラート定義
-                    let bgColor = '#000000';
+                    // 💡 画像の基準温度を完全再現する条件分岐
+                    let bgColor = '#4A6B75';       // ほぼ安全の色
                     let textColor = '#FFFFFF';
                     let labelColorClass = 'text-light';
                     let timeColorClass = '';
-                    let currentEmoji = '――';
+                    let txt = 'ほぼ安全';
+                    let svgKey = 'safe';
 
                     if (current.Wbgt) {
-                        if (wbgtVal >= 31.0) {
-                            bgColor = '#880000';
-                            currentEmoji = '😭';
-                        } else if (wbgtVal >= 28.0) {
-                            bgColor = '#A04000';
-                            currentEmoji = '😫';
-                        } else if (wbgtVal >= 25.0) {
-                            bgColor = '#B39200';
-                            textColor = '#000000';
+                        if (wbgtVal >= 32.0) {
+                            bgColor = '#FF3333';   // 危険（赤）
+                            txt = '危　険';
+                            svgKey = 'danger';
+                        } else if (wbgtVal >= 29.0) {
+                            bgColor = '#D47A2A';   // 厳重警戒（オレンジ）
+                            txt = '厳重警戒';
+                            svgKey = 'severe';
+                        } else if (wbgtVal >= 26.0) {
+                            bgColor = '#88A848';   // 警戒（黄緑/茶中間）
+                            txt = '警　戒';
+                            svgKey = 'alert';
+                        } else if (wbgtVal >= 22.0) {
+                            bgColor = '#99FF66';   // 注意（明るい黄緑）
+                            textColor = '#111111'; // 黒文字化
                             labelColorClass = 'text-dark';
                             timeColorClass = 'time-dark';
-                            currentEmoji = '😐';
-                        } else {
-                            bgColor = '#003366';
-                            currentEmoji = '😊';
+                            txt = '注　意';
+                            svgKey = 'warn';
                         }
                     }
 
-                    // 4. 各要素への一斉適用
-                    const blocks = document.querySelectorAll('.data-block');
-                    const labels = document.querySelectorAll('.data-label');
-                    const times = document.querySelectorAll('.data-time');
-                    const emojis = document.querySelectorAll('.status-emoji');
+                    // ①番のWBGTブロックに高画質SVG顔グラフィックと文字を注入
+                    document.getElementById('worker-avatar').innerHTML = svgHeader + faceExpressions[svgKey] + svgFooter;
+                    document.getElementById('status-label').textContent = txt;
 
-                    blocks.forEach(b => {
+                    // 全4つのデータブロックへ一斉スタイル適用
+                    document.querySelectorAll('.data-block').forEach(b => {
                         b.style.backgroundColor = bgColor;
                         b.style.color = textColor;
                     });
-
-                    labels.forEach(l => {
+                    document.querySelectorAll('.data-label').forEach(l => {
                         l.className = 'label data-label ' + labelColorClass;
                     });
-
-                    times.forEach(t => {
-                        if (timeColorClass) {
-                            t.classList.add('time-dark');
-                        } else {
-                            t.classList.remove('time-dark');
-                        }
-                    });
-
-                    emojis.forEach(e => {
-                        e.textContent = currentEmoji;
+                    document.querySelectorAll('.data-time').forEach(t => {
+                        t.className = 'time-stamp data-time';
+                        if (timeColorClass) t.classList.add(timeColorClass);
                     });
                 }
             } catch (error) {
-                console.error('データ取得または解析エラー:', error);
+                console.error('データ更新失敗:', error);
             }
         }
+
+        updateClock();
+        setInterval(updateClock, 1000);
 
         updateSignageData();
         setInterval(updateSignageData, 10000); 
