@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>環境モニター サイネージ</title>
+    <style>
+        /* 画面全体の初期化（スクロールバー非表示、黒背景） */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #000000;
+            color: #FFFFFF;
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+        }
+
+        /* 1:5 の横長比率を保つためのコンテナ */
+        .signage-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 各エリア（①〜⑤）の共通スタイル */
+        .block {
+            flex: 1; /* 均等に5分割 */
+            height: 100%;
+            border-right: 2px solid #333333; /* 境界線（焼き付き防止を兼ねて暗め） */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* 上部に数値、下部に時刻を配置 */
+            padding: 4vh 2vw;
+            text-align: center;
+        }
+        .block:last-child {
+            border-right: none;
+        }
+
+        /* 項目タイトル */
+        .label {
+            font-size: 2.5vw;
+            font-weight: bold;
+            color: #AAAAAA;
+        }
+
+        /* 数値表示エリア */
+        .value-container {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .value {
+            font-size: 7vw;
+            line-height: 1;
+        }
+        .unit {
+            font-size: 3.5vw;
+            margin-left: 0.5vw;
+        }
+
+        /* 下部の日付・時刻エリア */
+        .time-stamp {
+            font-size: 1.8vw;
+            color: #CCCCCC;
+            background-color: #111111;
+            padding: 0.5vh 0;
+            border-radius: 4px;
+            font-family: monospace; /* ズレ防止 */
+        }
+
+        /* ① WBGT専用の動的背景色（危険度に応じて変化させたい場合用） */
+        #block-wbgt {
+            /* 初期値は黒。JSでアラート色に変えることも可能 */
+            background-color: #000000; 
+        }
+
+        /* ⑤ ロゴ専用エリア */
+        #block-logo {
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+        }
+        .logo-wrapper {
+            width: 90%;
+            /* 縦横1:1（正方形）を維持 */
+            aspect-ratio: 1 / 1; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .logo-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* アスペクト比を崩さず収める */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="signage-container">
+        <div class="block" id="block-wbgt">
+            <div class="label">暑さ指数 (WBGT)</div>
+            <div class="value-container">
+                <span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span>
+            </div>
+            <div class="time-stamp" id="time-wbgt">----/--/-- --:--:--</div>
+        </div>
+
+        <div class="block">
+            <div class="label">気温</div>
+            <div class="value-container">
+                <span class="value" id="val-kion">--.-</span><span class="unit">℃</span>
+            </div>
+            <div class="time-stamp" id="time-kion">----/--/-- --:--:--</div>
+        </div>
+
+        <div class="block">
+            <div class="label">黒球温度</div>
+            <div class="value-container">
+                <span class="value" id="val-koku">--.-</span><span class="unit">℃</span>
+            </div>
+            <div class="time-stamp" id="time-koku">----/--/-- --:--:--</div>
+        </div>
+
+        <div class="block">
+            <div class="label">湿度</div>
+            <div class="value-container">
+                <span class="value" id="val-shitu">--.-</span><span class="unit">%</span>
+            </div>
+            <div class="time-stamp" id="time-shitu">----/--/-- --:--:--</div>
+        </div>
+
+        <div class="block" id="block-logo">
+            <div class="logo-wrapper">
+                <img src="logo.png" alt="DS工務店 ロゴ">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // データ（レスポンス）を取得して画面を更新する関数
+        async function updateSignageData() {
+            try {
+                // ※実際のエンドポイントURLに書き換えてください
+                const response = await fetch('https://www2.edam.ne.jp/Public/00574/Sokutei/..."'); 
+                const data = await response.json();
+                
+                if (data && data.length > 0) {
+                    const current = data[0];
+
+                    // 各項目の数値を反映
+                    document.getElementById('val-wbgt').textContent = current.Wbgt.toFixed(1);
+                    document.getElementById('val-kion').textContent = current.Kion.toFixed(1);
+                    document.getElementById('val-koku').textContent = current.Koku.toFixed(1);
+                    document.getElementById('val-shitu').textContent = current.Shitu.toFixed(1);
+
+                    // 各項目の「日付現時刻」を反映
+                    document.getElementById('time-wbgt').textContent = current.Time;
+                    document.getElementById('time-kion').textContent = current.Time;
+                    document.getElementById('time-koku').textContent = current.Time;
+                    document.getElementById('time-shitu').textContent = current.Time;
+
+                    // 【オプション】WBGTの値に応じて背景色を変えて警告度を強調する場合
+                    const wbgtBlock = document.getElementById('block-wbgt');
+                    if (current.Wbgt >= 31.0) {
+                        wbgtBlock.style.backgroundColor = '#800000'; // 危険（深い赤で焼き付き防止）
+                    } else if (current.Wbgt >= 28.0) {
+                        wbgtBlock.style.backgroundColor = '#664400'; // 厳重警戒（深いオレンジ）
+                    } else {
+                        wbgtBlock.style.backgroundColor = '#000000'; // 通常（黒）
+                    }
+                }
+            } catch (error) {
+                console.error('データ取得エラー:', error);
+            }
+        }
+
+        // ページ読み込み時に実行、以降数秒〜数十秒おきに自動更新
+        updateSignageData();
+        setInterval(updateSignageData, 10000); // 10秒ごとに最新データをチェック
+    </script>
+</body>
+</html>
