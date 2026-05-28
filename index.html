@@ -21,21 +21,21 @@
             display: flex;
         }
 
-        /* 5分割のコンテナ */
+        /* 1:5 の横長比率を保つためのコンテナ */
         .signage-container {
             display: flex;
             width: 100%;
             height: 100%;
         }
 
-        /* 各エリアの共通スタイル */
+        /* 各エリアの共通スタイル（均等5分割） */
         .block {
             flex: 1;
             height: 100%;
-            border-right: 2px solid #222222; /* 焼き付き防止用の境界線 */
+            border-right: 2px solid #222222; /* 焼き付き防止を兼ねた暗めの境界線 */
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: space-between; /* 上部に数値、下部に時刻を固定 */
             padding: 4vh 2vw;
             text-align: center;
         }
@@ -74,10 +74,10 @@
             background-color: #111111;
             padding: 0.6vh 0;
             border-radius: 4px;
-            font-family: monospace;
+            font-family: monospace; /* 文字ズレ防止 */
         }
 
-        /* ① WBGT専用ブロック（背景色変化） */
+        /* ① WBGT専用ブロック（背景色変化のスムーズ化） */
         #block-wbgt {
             background-color: #000000; 
             transition: background-color 0.5s ease;
@@ -91,7 +91,7 @@
         }
         .logo-wrapper {
             width: 85%;
-            aspect-ratio: 1 / 1;
+            aspect-ratio: 1 / 1; /* 正方形を維持 */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -100,7 +100,7 @@
         .logo-wrapper img {
             width: 100%;
             height: 100%;
-            object-fit: contain;
+            object-fit: contain; /* アスペクト比を壊さず収める */
         }
     </style>
 </head>
@@ -147,10 +147,10 @@
     </div>
 
     <script>
-        // 【超重要】HTMLページではなく、E-DAMが裏で叩いている「本物のデータ通信先」を指定
+        // 【超重要】HTMLページではなく、E-DAMが内部で叩いている「データAPI」の直URLに変更
         const targetUrl = 'https://www2.edam.ne.jp/Public/00574/Sokutei/GetWbgtRN?LoID=2452'; 
         
-        // CORS回避プロキシ
+        // CORS回避プロキシを通す
         const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
 
         async function updateSignageData() {
@@ -158,32 +158,32 @@
                 const response = await fetch(proxyUrl);
                 if (!response.ok) throw new Error('ネットワーク応答が正常ではありません');
                 
-                // 今回は相手が100%純粋なJSONを返してくるエンドポイントを叩くため、直でJSONパースします
+                // 今回は相手が100%ピュアなJSONデータを返してくるので、直接パースします
                 const data = await response.json();
                 
                 if (data && data.length > 0) {
                     const current = data[0];
 
-                    // 数値の反映
+                    // 各数値をセット（安全に小数第1位へ変換）
                     document.getElementById('val-wbgt').textContent = current.Wbgt ? Number(current.Wbgt).toFixed(1) : '--.-';
                     document.getElementById('val-kion').textContent = current.Kion ? Number(current.Kion).toFixed(1) : '--.-';
                     document.getElementById('val-koku').textContent = current.Koku ? Number(current.Koku).toFixed(1) : '--.-';
                     document.getElementById('val-shitu').textContent = current.Shitu ? Number(current.Shitu).toFixed(1) : '--.-';
 
-                    // 時刻の反映
+                    // 各ブロックの下部へ「日付現時刻」を一斉セット
                     const currentTimeString = current.Time || '----/--/-- --:--:--';
                     document.getElementById('time-wbgt').textContent = currentTimeString;
                     document.getElementById('time-kion').textContent = currentTimeString;
                     document.getElementById('time-koku').textContent = currentTimeString;
                     document.getElementById('time-shitu').textContent = currentTimeString;
 
-                    // WBGT判定による背景色アラート（焼き付き対策の深めの色）
+                    // WBGTの数値に基づいた、焼き付きを起こしにくい深めのアラート背景色
                     const wbgtBlock = document.getElementById('block-wbgt');
                     const wbgtVal = Number(current.Wbgt);
                     if (wbgtVal >= 31.0) {
-                        wbgtBlock.style.backgroundColor = '#660000'; // 危険（赤）
+                        wbgtBlock.style.backgroundColor = '#660000'; // 危険（深赤）
                     } else if (wbgtVal >= 28.0) {
-                        wbgtBlock.style.backgroundColor = '#553300'; // 厳重警戒（オレンジ）
+                        wbgtBlock.style.backgroundColor = '#553300'; // 厳重警戒（深橙）
                     } else {
                         wbgtBlock.style.backgroundColor = '#000000'; // 通常（黒）
                     }
@@ -193,8 +193,10 @@
             }
         }
 
-        // 初回実行と10秒おきの高頻度自動更新
+        // ページを読み込んだ瞬間に1回目を実行
         updateSignageData();
+        
+        // 以降、10秒（10000ミリ秒）ごとにバックグラウンドで自動通信・画面更新（高頻度リアルタイム対応）
         setInterval(updateSignageData, 10000); 
     </script>
 </body>
