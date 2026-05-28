@@ -60,22 +60,18 @@
                 
                 const resText = await response.text();
                 
-                // デバッグ出力：取得した文字列の先頭500文字を画面下に強制表示
+                // デバッグ出力：取得した文字列の先頭1500文字を画面下に強制表示
                 debugConsole.textContent = "【データ受信成功】ソースの一部：\n" + resText.substring(0, 1500);
 
                 // 1. 最も広い条件で JSON っぽい部分を探す
-                // 大文字小文字を無視し、Time や Wbgt が含まれる中括弧の塊を抽出
                 const match = resText.match(/\{[\s\S]*?"Time"[\s\S]*?\}/i);
                 
                 if (!match) {
-                    // もし見つからない場合、HTMLの中にそのまま数値が埋め込まれている可能性（テーブルタグ等）
-                    debugConsole.textContent += "\n\n【エラー詳細】TimeやWbgtという文字の入ったJSONオブジェクトが見つかりません。HTMLソースの解析が必要です。";
+                    debugConsole.textContent += "\n\n【エラー詳細】TimeやWbgtという文字の入ったJSONオブジェクトが見つかりません。";
                     throw new Error('HTML内からデータオブジェクトが見つかりませんでした');
                 }
                 
-                // 見つかった文字列を綺麗にしてJSONパース
                 let jsonStr = match[0];
-                // 前後に不要な配列記号 [ ] が残っていたら補正
                 if (!jsonStr.startsWith('[')) {
                     jsonStr = '[' + jsonStr + ']';
                 }
@@ -98,9 +94,13 @@
 
                     const wbgtBlock = document.getElementById('block-wbgt');
                     const wbgtVal = Number(current.Wbgt);
-                    if (wbgtVal >= 31.0) { wbgtBlock.style.backgroundColor = '#660000'; }
-                    elif (wbgtVal >= 28.0) { wbgtBlock.style.backgroundColor = '#553300'; }
-                    else { wbgtBlock.style.backgroundColor = '#000000'; }
+                    if (wbgtVal >= 31.0) { 
+                        wbgtBlock.style.backgroundColor = '#660000'; 
+                    } else if (wbgtVal >= 28.0) { 
+                        wbgtBlock.style.backgroundColor = '#553300'; 
+                    } else { 
+                        wbgtBlock.style.backgroundColor = '#000000'; 
+                    }
                 }
             } catch (error) {
                 console.error('データ取得または解析エラー:', error);
