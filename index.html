@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>環境モニター サイネージ（完全5等分固定版）</title>
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Expires" content="0">
+    <title>環境モニター サイネージ（実機キャッシュ貫通版）</title>
     <style>
         /* 画面全体の初期化 */
         * {
@@ -28,14 +31,12 @@
             height: 100%;
         }
 
-        /* 【修正】どんな中身でも絶対に20%（5等分）に完全固定するスタイル */
+        /* 20%完全固定スタイル */
         .block {
-            /* 💡 幅を「20%」に完全固定し、中身による自動伸縮を一切禁止（0）にします */
             flex: 0 0 20%; 
             width: 20%;
             max-width: 20%;
             min-width: 20%;
-            
             height: 100%;
             border-right: 2px solid #222222;
             display: flex;
@@ -55,7 +56,7 @@
             font-size: 2.2vw;
             font-weight: bold;
             color: #AAAAAA;
-            white-space: nowrap; /* タイトルの改行を防止 */
+            white-space: nowrap;
         }
         .text-dark { color: #111111 !important; }
         .text-light { color: #AAAAAA !important; }
@@ -101,7 +102,7 @@
             padding: 0.6vh 0;
             border-radius: 4px;
             font-family: monospace;
-            white-space: nowrap; /* 時刻の意図しない改行を防止 */
+            white-space: nowrap;
             width: 100%;
         }
         .time-dark {
@@ -109,7 +110,7 @@
             color: #111111 !important;
         }
 
-        /* ⑤ ロゴ専用エリア（ロゴの背景は黒固定・幅20%固定） */
+        /* ⑤ ロゴ専用エリア */
         #block-logo {
             justify-content: center;
             align-items: center;
@@ -164,7 +165,7 @@
                 </div>
                 <span class="status-emoji" id="emoji-koku">――</span>
             </div>
-            <div class="time-stamp " id="time-koku">----/--/-- --:--:--</div>
+            <div class="time-stamp data-time" id="time-koku">----/--/-- --:--:--</div>
         </div>
 
         <div class="block data-block">
@@ -187,12 +188,26 @@
 
     <script>
         const baseUrl = 'https://www2.edam.ne.jp/Json/WBGTNumData/2452';
-        const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(baseUrl);
 
         async function updateSignageData() {
             try {
-                const cacheBuster = '?r=' + new Date().getTime();
-                const response = await fetch(proxyUrl + encodeURIComponent(cacheBuster));
+                // 💡 【超強力対策】ミリ秒単位のタイムスタンプを生成し、URLの末尾に毎回違う数字を付与
+                // さらに、プロキシ側（corsproxy.io）のキャッシュも強制的に破壊する構造に変更
+                const timeStamp = new Date().getTime();
+                const targetUrl = baseUrl + '?r=' + timeStamp;
+                
+                // プロキシURL自体にも一意の番号を付加して、プロキシサーバーのキャッシュも貫通させます
+                const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl) + '&nocache=' + timeStamp;
+
+                // 💡 fetchのオプションにキャッシュ無効化の設定を明示的に追加
+                const response = await fetch(proxyUrl, {
+                    cache: 'no-store',
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
+                    }
+                });
+                
                 if (!response.ok) throw new Error('ネットワーク応答が正常ではありません');
                 
                 const data = await response.json();
@@ -201,20 +216,20 @@
                     const current = data[0];
                     const wbgtVal = current.Wbgt ? Number(current.Wbgt) : 0;
 
-                    // 1. 数値のセット
+                    // 数値セット
                     document.getElementById('val-wbgt').textContent = current.Wbgt ? wbgtVal.toFixed(1) : '--.-';
                     document.getElementById('val-kion').textContent = current.Kion ? Number(current.Kion).toFixed(1) : '--.-';
                     document.getElementById('val-koku').textContent = current.Koku ? Number(current.Koku).toFixed(1) : '--.-';
                     document.getElementById('val-shitu').textContent = current.Shitu ? Number(current.Shitu).toFixed(1) : '--.-';
 
-                    // 2. 時刻のセット
+                    // 時刻セット
                     const currentTimeString = current.Time || '----/--/-- --:--:--';
                     document.getElementById('time-wbgt').textContent = currentTimeString;
                     document.getElementById('time-kion').textContent = currentTimeString;
                     document.getElementById('time-koku').textContent = currentTimeString;
                     document.getElementById('time-shitu').textContent = currentTimeString;
 
-                    // 3. アラート色の定義
+                    // アラート定義
                     let bgColor = '#000000';
                     let textColor = '#FFFFFF';
                     let labelColorClass = 'text-light';
@@ -223,24 +238,24 @@
 
                     if (current.Wbgt) {
                         if (wbgtVal >= 31.0) {
-                            bgColor = '#880000';      // 危険：赤
+                            bgColor = '#880000';
                             currentEmoji = '😭';
                         } else if (wbgtVal >= 28.0) {
-                            bgColor = '#A04000';      // 厳重警戒：オレンジ
+                            bgColor = '#A04000';
                             currentEmoji = '😫';
                         } else if (wbgtVal >= 25.0) {
-                            bgColor = '#B39200';      // 警戒：黄
+                            bgColor = '#B39200';
                             textColor = '#000000';
                             labelColorClass = 'text-dark';
                             timeColorClass = 'time-dark';
                             currentEmoji = '😐';
                         } else {
-                            bgColor = '#003366';      // 注意：青
+                            bgColor = '#003366';
                             currentEmoji = '😊';
                         }
                     }
 
-                    // 4. 各種要素への一斉適用
+                    // 一斉適用
                     const blocks = document.querySelectorAll('.data-block');
                     const labels = document.querySelectorAll('.data-label');
                     const times = document.querySelectorAll('.data-time');
@@ -257,26 +272,6 @@
 
                     times.forEach(t => {
                         if (timeColorClass) {
-                            t.classList.add('time-dark');
-                        } else {
-                            t.classList.remove('time-dark');
-                        }
-                    });
-
-                    emojis.forEach(e => {
-                        e.textContent = currentEmoji;
-                    });
-                }
-            } catch (error) {
-                console.error('データ取得または解析エラー:', error);
-            }
-        }
-
-        updateSignageData();
-        setInterval(updateSignageData, 10000); 
-    </script>
-</body>
-</html>                        if (timeColorClass) {
                             t.classList.add('time-dark');
                         } else {
                             t.classList.remove('time-dark');
