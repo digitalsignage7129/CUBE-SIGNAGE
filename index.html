@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>環境モニター サイネージ</title>
+    <title>環境モニター サイネージ（完全5等分固定版）</title>
     <style>
-        /* 画面全体の初期化（スクロールバー非表示、黒背景） */
+        /* 画面全体の初期化 */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -21,23 +21,30 @@
             display: flex;
         }
 
-        /* 1:5 の横長比率を保つためのコンテナ */
+        /* 5分割コンテナ */
         .signage-container {
             display: flex;
             width: 100%;
             height: 100%;
         }
 
-        /* 各エリア（①〜⑤）の共通スタイル（均等5分割） */
+        /* 【修正】どんな中身でも絶対に20%（5等分）に完全固定するスタイル */
         .block {
-            flex: 1;
+            /* 💡 幅を「20%」に完全固定し、中身による自動伸縮を一切禁止（0）にします */
+            flex: 0 0 20%; 
+            width: 20%;
+            max-width: 20%;
+            min-width: 20%;
+            
             height: 100%;
-            border-right: 2px solid #222222; /* 焼き付き防止用の境界線 */
+            border-right: 2px solid #222222;
             display: flex;
             flex-direction: column;
-            justify-content: space-between; /* 上部に数値、下部に時刻を固定 */
-            padding: 4vh 2vw;
+            justify-content: space-between;
+            padding: 4vh 1vw;
             text-align: center;
+            background-color: #000000;
+            transition: background-color 0.5s ease, color 0.5s ease;
         }
         .block:last-child {
             border-right: none;
@@ -48,46 +55,66 @@
             font-size: 2.2vw;
             font-weight: bold;
             color: #AAAAAA;
+            white-space: nowrap; /* タイトルの改行を防止 */
         }
+        .text-dark { color: #111111 !important; }
+        .text-light { color: #AAAAAA !important; }
 
-        /* 数値表示エリア */
+        /* 数値・顔文字表示エリア */
         .value-container {
             flex-grow: 1;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             font-weight: bold;
+            gap: 1vh;
+        }
+        .value-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            width: 100%;
         }
         .value {
             font-size: 7.5vw;
             line-height: 1;
         }
         .unit {
-            font-size: 3.5vw;
-            margin-left: 0.5vw;
+            font-size: 3vw;
+            margin-left: 0.3vw;
+        }
+
+        /* 巨大顔文字 */
+        .status-emoji {
+            font-size: 6.5vw;
+            line-height: 1;
+            margin-top: 1vh;
+            display: block;
         }
 
         /* 下部の日付・時刻エリア */
         .time-stamp {
-            font-size: 1.6vw;
+            font-size: 1.5vw;
             color: #CCCCCC;
             background-color: #111111;
             padding: 0.6vh 0;
             border-radius: 4px;
             font-family: monospace;
+            white-space: nowrap; /* 時刻の意図しない改行を防止 */
+            width: 100%;
+        }
+        .time-dark {
+            background-color: rgba(0,0,0,0.4) !important;
+            color: #111111 !important;
         }
 
-        /* ① WBGT専用ブロック（背景色変化） */
-        #block-wbgt {
-            background-color: #000000; 
-            transition: background-color 0.5s ease;
-        }
-
-        /* ⑤ ロゴ専用エリア */
+        /* ⑤ ロゴ専用エリア（ロゴの背景は黒固定・幅20%固定） */
         #block-logo {
             justify-content: center;
             align-items: center;
             padding: 0;
+            background-color: #000000 !important;
         }
         .logo-wrapper {
             width: 85%;
@@ -107,36 +134,48 @@
 <body>
 
     <div class="signage-container">
-        <div class="block" id="block-wbgt">
-            <div class="label">暑さ指数 (WBGT)</div>
+        <div class="block data-block">
+            <div class="label data-label">暑さ指数 (WBGT)</div>
             <div class="value-container">
-                <span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span>
+                <div class="value-row">
+                    <span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span>
+                </div>
+                <span class="status-emoji" id="emoji-wbgt">――</span>
             </div>
-            <div class="time-stamp" id="time-wbgt">----/--/-- --:--:--</div>
+            <div class="time-stamp data-time" id="time-wbgt">----/--/-- --:--:--</div>
         </div>
 
-        <div class="block">
-            <div class="label">気温</div>
+        <div class="block data-block">
+            <div class="label data-label">気温</div>
             <div class="value-container">
-                <span class="value" id="val-kion">--.-</span><span class="unit">℃</span>
+                <div class="value-row">
+                    <span class="value" id="val-kion">--.-</span><span class="unit">℃</span>
+                </div>
+                <span class="status-emoji" id="emoji-kion">――</span>
             </div>
-            <div class="time-stamp" id="time-kion">----/--/-- --:--:--</div>
+            <div class="time-stamp data-time" id="time-kion">----/--/-- --:--:--</div>
         </div>
 
-        <div class="block">
-            <div class="label">黒球温度</div>
+        <div class="block data-block">
+            <div class="label data-label">黒球温度</div>
             <div class="value-container">
-                <span class="value" id="val-koku">--.-</span><span class="unit">℃</span>
+                <div class="value-row">
+                    <span class="value" id="val-koku">--.-</span><span class="unit">℃</span>
+                </div>
+                <span class="status-emoji" id="emoji-koku">――</span>
             </div>
-            <div class="time-stamp" id="time-koku">----/--/-- --:--:--</div>
+            <div class="time-stamp " id="time-koku">----/--/-- --:--:--</div>
         </div>
 
-        <div class="block">
-            <div class="label">湿度</div>
+        <div class="block data-block">
+            <div class="label data-label">湿度</div>
             <div class="value-container">
-                <span class="value" id="val-shitu">--.-</span><span class="unit">%</span>
+                <div class="value-row">
+                    <span class="value" id="val-shitu">--.-</span><span class="unit">%</span>
+                </div>
+                <span class="status-emoji" id="emoji-shitu">――</span>
             </div>
-            <div class="time-stamp" id="time-shitu">----/--/-- --:--:--</div>
+            <div class="time-stamp data-time" id="time-shitu">----/--/-- --:--:--</div>
         </div>
 
         <div class="block" id="block-logo">
@@ -147,60 +186,113 @@
     </div>
 
     <script>
-        // 【特定成功】ユーザー様に見つけていただいた本物のデータ通信先ベースURL
         const baseUrl = 'https://www2.edam.ne.jp/Json/WBGTNumData/2452';
+        const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(baseUrl);
 
         async function updateSignageData() {
             try {
-                // 相手サーバーのキャッシュを完全に回避するため、アクセス毎に異なる数字（タイムスタンプ）を末尾に自動付与
                 const cacheBuster = '?r=' + new Date().getTime();
-                const targetUrl = baseUrl + cacheBuster;
-                
-                // CORSプロキシを経由してAPIにダイレクトアタック
-                const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
-                
-                const response = await fetch(proxyUrl);
+                const response = await fetch(proxyUrl + encodeURIComponent(cacheBuster));
                 if (!response.ok) throw new Error('ネットワーク応答が正常ではありません');
                 
-                // 100%綺麗なJSONが返ってくるため、そのままパース
                 const data = await response.json();
                 
                 if (data && data.length > 0) {
                     const current = data[0];
+                    const wbgtVal = current.Wbgt ? Number(current.Wbgt) : 0;
 
-                    // 各数値を画面に反映
-                    document.getElementById('val-wbgt').textContent = current.Wbgt ? Number(current.Wbgt).toFixed(1) : '--.-';
+                    // 1. 数値のセット
+                    document.getElementById('val-wbgt').textContent = current.Wbgt ? wbgtVal.toFixed(1) : '--.-';
                     document.getElementById('val-kion').textContent = current.Kion ? Number(current.Kion).toFixed(1) : '--.-';
                     document.getElementById('val-koku').textContent = current.Koku ? Number(current.Koku).toFixed(1) : '--.-';
                     document.getElementById('val-shitu').textContent = current.Shitu ? Number(current.Shitu).toFixed(1) : '--.-';
 
-                    // 日付・時刻を反映
+                    // 2. 時刻のセット
                     const currentTimeString = current.Time || '----/--/-- --:--:--';
                     document.getElementById('time-wbgt').textContent = currentTimeString;
                     document.getElementById('time-kion').textContent = currentTimeString;
                     document.getElementById('time-koku').textContent = currentTimeString;
                     document.getElementById('time-shitu').textContent = currentTimeString;
 
-                    // WBGTの数値に基づいた、焼き付きを起こしにくい深めのアラート背景色
-                    const wbgtBlock = document.getElementById('block-wbgt');
-                    const wbgtVal = Number(current.Wbgt);
-                    if (wbgtVal >= 31.0) {
-                        wbgtBlock.style.backgroundColor = '#660000'; // 危険（深赤）
-                    } else if (wbgtVal >= 28.0) {
-                        wbgtBlock.style.backgroundColor = '#553300'; // 厳重警戒（深橙）
-                    } else {
-                        wbgtBlock.style.backgroundColor = '#000000'; // 通常（黒）
+                    // 3. アラート色の定義
+                    let bgColor = '#000000';
+                    let textColor = '#FFFFFF';
+                    let labelColorClass = 'text-light';
+                    let timeColorClass = '';
+                    let currentEmoji = '――';
+
+                    if (current.Wbgt) {
+                        if (wbgtVal >= 31.0) {
+                            bgColor = '#880000';      // 危険：赤
+                            currentEmoji = '😭';
+                        } else if (wbgtVal >= 28.0) {
+                            bgColor = '#A04000';      // 厳重警戒：オレンジ
+                            currentEmoji = '😫';
+                        } else if (wbgtVal >= 25.0) {
+                            bgColor = '#B39200';      // 警戒：黄
+                            textColor = '#000000';
+                            labelColorClass = 'text-dark';
+                            timeColorClass = 'time-dark';
+                            currentEmoji = '😐';
+                        } else {
+                            bgColor = '#003366';      // 注意：青
+                            currentEmoji = '😊';
+                        }
                     }
+
+                    // 4. 各種要素への一斉適用
+                    const blocks = document.querySelectorAll('.data-block');
+                    const labels = document.querySelectorAll('.data-label');
+                    const times = document.querySelectorAll('.data-time');
+                    const emojis = document.querySelectorAll('.status-emoji');
+
+                    blocks.forEach(b => {
+                        b.style.backgroundColor = bgColor;
+                        b.style.color = textColor;
+                    });
+
+                    labels.forEach(l => {
+                        l.className = 'label data-label ' + labelColorClass;
+                    });
+
+                    times.forEach(t => {
+                        if (timeColorClass) {
+                            t.classList.add('time-dark');
+                        } else {
+                            t.classList.remove('time-dark');
+                        }
+                    });
+
+                    emojis.forEach(e => {
+                        e.textContent = currentEmoji;
+                    });
                 }
             } catch (error) {
                 console.error('データ取得または解析エラー:', error);
             }
         }
 
-        // ページを読み込んだ瞬間に1回目を実行
         updateSignageData();
-        
-        // 【10秒おき】超高頻度のリアルタイム自動更新をバックグラウンドでループ実行
+        setInterval(updateSignageData, 10000); 
+    </script>
+</body>
+</html>                        if (timeColorClass) {
+                            t.classList.add('time-dark');
+                        } else {
+                            t.classList.remove('time-dark');
+                        }
+                    });
+
+                    emojis.forEach(e => {
+                        e.textContent = currentEmoji;
+                    });
+                }
+            } catch (error) {
+                console.error('データ取得または解析エラー:', error);
+            }
+        }
+
+        updateSignageData();
         setInterval(updateSignageData, 10000); 
     </script>
 </body>
