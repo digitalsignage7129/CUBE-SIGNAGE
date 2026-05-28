@@ -2,9 +2,9 @@ name: 現場環境データ定期更新
 
 on:
   schedule:
-    # 5分おきに自動実行（GitHubの仕様上、多少前後することがあります）
+    # 5分おきに自動実行
     - cron: '*/5 * * * *'
-  workflow_dispatch: # 手動で即座に実行するためのボタンを有効化
+  workflow_dispatch: # 手動実行ボタン
 
 jobs:
   update-data:
@@ -19,7 +19,7 @@ jobs:
     - name: Pythonのセットアップ
       uses: actions/setup-python@v5
       with:
-        python-style: '3.10'
+        python-version: '3.10' # ←「python-style」になっていたミスを修正
 
     - name: 依存ライブラリのインストール
       run: |
@@ -33,4 +33,5 @@ jobs:
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add data.json
+        # 変更があればコミットしてプッシュ、無ければスキップ（128エラー対策）
         git diff --cached --quiet || (git commit -m "データ自動更新" && git push)
