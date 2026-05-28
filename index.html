@@ -6,9 +6,9 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>環境モニター サイネージ（横長640x128専用版）</title>
+    <title>環境モニター サイネージ（横長640x128 ぴったりジャスト版）</title>
     <style>
-        /* 画面全体の初期化 */
+        /* 画面全体の初期化（余白をゼロにし、画面外へのはみ出しを完全禁止） */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -21,7 +21,7 @@
             overflow: hidden;
             width: 100vw;
             height: 100vh;
-            display: flex; /* 横並び（左から右）に戻します */
+            display: flex;
         }
 
         /* 5分割コンテナ */
@@ -31,7 +31,7 @@
             height: 100%;
         }
 
-        /* 【修正】横長画面で、各ブロックを「横幅20%（128px）× 高さ100%（128px）」に完全固定 */
+        /* 各ブロック：横幅20%（128px）、高さ100%（128px）の完全固定 */
         .block {
             flex: 0 0 20%; 
             width: 20%;
@@ -39,11 +39,11 @@
             min-width: 20%;
             height: 100%;
             
-            border-right: 2px solid #222222; /* 横並び用の右境界線 */
+            border-right: 1px solid #222222;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
-            /* 💡 高さが128pxしかないため、上下の余白を極限までタイト（4px）にして見切れを徹底防御 */
+            /* 💡 各要素を上下に引き伸ばさず、上詰めで配置して下部の見切れを徹底防御 */
+            justify-content: flex-start; 
             padding: 4px 2px; 
             text-align: center;
             background-color: #000000;
@@ -54,79 +54,83 @@
             border-right: none;
         }
 
-        /* 項目タイトル（128pxの幅に1行で収まるサイズ） */
+        /* 項目タイトル（行間を極限まで詰めて高さを節約） */
         .label {
             font-size: 11px;
             font-weight: bold;
             color: #AAAAAA;
             white-space: nowrap;
-            line-height: 1.1;
+            line-height: 1.0;
+            margin-bottom: 2px; /* 下の数値との隙間 */
         }
         .text-dark { color: #111111 !important; }
         .text-light { color: #AAAAAA !important; }
 
-        /* 数値・顔文字表示エリア（高さ128pxのなかに綺麗に収める） */
+        /* 数値・顔文字表示エリア（高さを絶対に食いつぶさないコンパクト設計） */
         .value-container {
-            flex-grow: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            margin: 1px 0;
+            width: 100%;
+            /* 💡 ここが自由に伸びるのを防ぎ、高さを制限します */
+            height: 80px; 
         }
         .value-row {
             display: flex;
             align-items: baseline;
             justify-content: center;
-            line-height: 1;
+            line-height: 1.0;
         }
         .value {
-            font-size: 32px; /* 128pxの高さでも絶対につぶれないクッキリサイズ */
+            font-size: 36px; /* 128pxの高さの中で最大級に目立つサイズ */
             font-family: 'Arial Black', sans-serif;
-            line-height: 1;
+            line-height: 1.0;
         }
         .unit {
-            font-size: 13px;
+            font-size: 14px;
             margin-left: 1px;
+            line-height: 1.0;
         }
 
-        /* 巨大顔文字（上下の隙間にピタッと収まるサイズ） */
+        /* 巨大顔文字（数値の下にピタッと張り付くサイズ） */
         .status-emoji {
-            font-size: 24px; 
-            line-height: 1;
-            margin-top: 1px;
+            font-size: 26px; 
+            line-height: 1.0;
+            margin-top: 2px;
             display: block;
         }
 
-        /* 下部の日付・時刻エリア */
+        /* 最下部：日付・時刻エリア */
         .time-stamp {
-            font-size: 9px; /* 128pxの横幅の中に「12:34:56」が1行で収まるサイズ */
+            font-size: 10px;
             color: #CCCCCC;
             background-color: #111111;
-            padding: 2px 0;
-            border-radius: 3px;
+            padding: 1px 0;
+            border-radius: 2px;
             font-family: monospace;
             white-space: nowrap;
             width: 95%;
-            margin: 0 auto;
-            line-height: 1;
+            margin: auto auto 0 auto; /* 💡 これにより、必ずブロックの「最下部」にピタッと張り付きます */
+            line-height: 1.2;
         }
         .time-dark {
             background-color: rgba(0,0,0,0.4) !important;
             color: #111111 !important;
         }
 
-        /* ⑤ ロゴ専用エリア（横128px×縦128pxの正方形の中に完璧に収める） */
+        /* ⑤ ロゴ専用エリア（128px×128pxの正方形をフルに使う） */
         #block-logo {
             justify-content: center;
             align-items: center;
-            padding: 4px;
+            /* 💡 無駄な余白を一切排除してロゴを最大化 */
+            padding: 0; 
             background-color: #000000 !important;
         }
         .logo-wrapper {
-            width: 90%;
-            height: 90%;
+            /* 💡 128px四方の枠いっぱいに広げます */
+            width: 100%;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -135,7 +139,8 @@
         .logo-wrapper img {
             width: 100%;
             height: 100%;
-            object-fit: contain; /* 縦横比を壊さず、半分見切れるのを完全に防止 */
+            /* 💡 比率を保ったまま、枠いっぱいに最大化（小さくなるのを防止） */
+            object-fit: contain; 
         }
     </style>
 </head>
@@ -224,7 +229,7 @@
                     document.getElementById('val-koku').textContent = current.Koku ? Number(current.Koku).toFixed(1) : '--.-';
                     document.getElementById('val-shitu').textContent = current.Shitu ? Number(current.Shitu).toFixed(1) : '--.-';
 
-                    // 2. 時刻セット（128px幅に収めるため「時:分:秒」のみを表示）
+                    // 2. 時刻セット（時:分:秒 のみ）
                     let timeString = '――:――';
                     if (current.Time) {
                         const parts = current.Time.split(' ');
