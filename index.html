@@ -1,45 +1,202 @@
-async function updateSignageData() {
-    try {
-        // 外部サイトではなく、自リポジトリ内の data.json を読み込む（CORSを完全回避）
-        // キャッシュによる停滞を防ぐため、末尾にタイムスタンプを付与
-        const response = await fetch('./data.json?t=' + new Date().getTime()); 
-        if (!response.ok) {
-            throw new Error('JSONファイルの読み込みに失敗しました');
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>環境モニター サイネージ</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
+        body {
+            background-color: #000000;
+            color: #FFFFFF;
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+        }
+
+        .signage-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        .block {
+            flex: 1;
+            height: 100%;
+            border-right: 2px solid #222222;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 4vh 2vw;
+            text-align: center;
+        }
+        .block:last-child {
+            border-right: none;
+        }
+
+        .label {
+            font-size: 2.2vw;
+            font-weight: bold;
+            color: #AAAAAA;
+        }
+
+        .value-container {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .value {
+            font-size: 7.5vw;
+            line-height: 1;
+        }
+        .unit {
+            font-size: 3.5vw;
+            margin-left: 0.5vw;
+        }
+
+        .time-stamp {
+            font-size: 1.6vw;
+            color: #CCCCCC;
+            background-color: #111111;
+            padding: 0.6vh 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        #block-wbgt {
+            background-color: #000000; 
+            transition: background-color 0.5s ease;
+        }
+
+        #block-logo {
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+        }
+        .logo-wrapper {
+            width: 85%;
+            aspect-ratio: 1 / 1; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .logo-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="signage-container">
+        <div class="block" id="block-wbgt">
+            <div class="label">暑さ指数 (WBGT)</div>
+            <div class="value-container">
+                <span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span>
+            </div>
+            <div class="time-stamp" id="time-wbgt">----/--/-- --:--:--</div>
+        </div>
+
+        <div class="block">
+            <div class="label">気温</div>
+            <div class="value-container">
+                <span class="value" id="val-kion">--.-</span><span class="unit">℃</span>
+            </div>
+            <div class="time-stamp" id="time-kion">----/--/-- --:--:--</div>
+        </div>
+
+        <div class="block">
+            <div class="label">黒球温度</div>
+            <div class="value-container">
+                <span class="value" id="val-koku">--.-</span><span class="unit">℃</span>
+            </div>
+            <div class="time-stamp" id="time-koku">----/--/-- --:--:--</div>
+        </div>
+
+        <div class="block">
+            <div class="label">湿度</div>
+            <div class="value-container">
+                <span class="value" id="val-shitu">--.-</span><span class="unit">%</span>
+            </div>
+            <div class="time-stamp" id="time-shitu">----/--/-- --:--:--</div>
+        </div>
+
+        <div class="block" id="block-logo">
+            <div class="logo-wrapper">
+                <img src="logo.png" alt="ロゴ">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 相手方の本当のデータエンドポイントURL（※実際のJSONが降ってくる通信先URLに変えてください）
+        const targetUrl = 'https://www2.edam.ne.jp/Public/00574/Sokutei/WBGT?LoID=2452'; 
         
-        const data = await response.json();
-        
-        if (data && data.length > 0) {
-            const current = data[0];
+        // CORSを無料・認証なしで回避させてくれるリバースプロキシサービスを利用
+        const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
 
-            // 各項目の数値を反映
-            document.getElementById('val-wbgt').textContent = Number(current.Wbgt).toFixed(1);
-            document.getElementById('val-kion').textContent = Number(current.Kion).toFixed(1);
-            document.getElementById('val-koku').textContent = Number(current.Koku).toFixed(1);
-            document.getElementById('val-shitu').textContent = Number(current.Shitu).toFixed(1);
+        async function updateSignageData() {
+            try {
+                // プロキシ経由で直接データをフェッチ（CORSエラーを完全に回避）
+                const response = await fetch(proxyUrl);
+                if (!response.ok) throw new Error('ネットワーク応答が正常ではありません');
+                
+                // ※もし相手方のURLがHTMLをそのまま返している場合、ここでテキストとして受け取り、
+                // 内部のJSON文字列 [ { ... } ] を強引にパース（抽出）します
+                const resText = await response.text();
+                
+                // 文字列中から JSON 配列の部分だけを切り出す
+                const match = resText.match(/\[\s*\{\s*"Time".*?\}\s*\]/s);
+                if (!match) throw new Error('HTML内からデータオブジェクトが見つかりませんでした');
+                
+                const data = JSON.parse(match.group(0));
+                
+                if (data && data.length > 0) {
+                    const current = data[0];
 
-            // 各項目の「日付現時刻」を反映
-            document.getElementById('time-wbgt').textContent = current.Time;
-            document.getElementById('time-kion').textContent = current.Time;
-            document.getElementById('time-koku').textContent = current.Time;
-            document.getElementById('time-shitu').textContent = current.Time;
+                    // 画面の数値を更新
+                    document.getElementById('val-wbgt').textContent = Number(current.Wbgt).toFixed(1);
+                    document.getElementById('val-kion').textContent = Number(current.Kion).toFixed(1);
+                    document.getElementById('val-koku').textContent = Number(current.Koku).toFixed(1);
+                    document.getElementById('val-shitu').textContent = Number(current.Shitu).toFixed(1);
 
-            // WBGT背景色アラート
-            const wbgtBlock = document.getElementById('block-wbgt');
-            if (current.Wbgt >= 31.0) {
-                wbgtBlock.style.backgroundColor = '#800000'; 
-            } else if (current.Wbgt >= 28.0) {
-                wbgtBlock.style.backgroundColor = '#664400'; 
-            } else {
-                wbgtBlock.style.backgroundColor = '#000000'; 
+                    // 日付現時刻を更新
+                    document.getElementById('time-wbgt').textContent = current.Time;
+                    document.getElementById('time-kion').textContent = current.Time;
+                    document.getElementById('time-koku').textContent = current.Time;
+                    document.getElementById('time-shitu').textContent = current.Time;
+
+                    // WBGTに応じた背景アラート色（焼き付き防止のため深めの色）
+                    const wbgtBlock = document.getElementById('block-wbgt');
+                    if (current.Wbgt >= 31.0) {
+                        wbgtBlock.style.backgroundColor = '#660000'; // 危険（赤）
+                    } else if (current.Wbgt >= 28.0) {
+                        wbgtBlock.style.backgroundColor = '#553300'; // 厳重警戒（オレンジ）
+                    } else {
+                        wbgtBlock.style.backgroundColor = '#000000'; // 通常（黒）
+                    }
+                }
+            } catch (error) {
+                console.error('データ取得または解析エラー:', error);
             }
         }
-    } catch (error) {
-        console.error('データ取得エラー:', error);
-    }
-}
 
-// 初回実行と定期チェック
-updateSignageData();
-// サイネージ側は30秒〜1分おきに data.json の更新をチェックしに行けば十分です
-setInterval(updateSignageData, 30000);
+        // 初回実行
+        updateSignageData();
+        
+        // 【超強力】数秒おきの高頻度アップデート（現場用・ここでは10秒に設定）
+        // GitHub Actionsと違って、ブラウザ側が直接見に行くのでリアルタイムに更新されます
+        setInterval(updateSignageData, 10000); 
+    </script>
+</body>
+</html>
