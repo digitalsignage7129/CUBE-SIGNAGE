@@ -3,113 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>環境モニター サイネージ（デバッグ版）</title>
+    <title>環境モニター サイネージ</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: #000000; color: #FFFFFF; font-family: sans-serif; overflow: hidden; width: 100vw; height: 100vh; display: flex; flex-direction: column; }
-        .signage-container { display: flex; width: 100%; height: 80%; }
-        .block { flex: 1; height: 100%; border-right: 2px solid #222222; display: flex; flex-direction: column; justify-content: space-between; padding: 4vh 2vw; text-align: center; }
-        .block:last-child { border-right: none; }
-        .label { font-size: 2.2vw; font-weight: bold; color: #AAAAAA; }
-        .value-container { flex-grow: 1; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-        .value { font-size: 7.5vw; line-height: 1; }
-        .unit { font-size: 3.5vw; margin-left: 0.5vw; }
-        .time-stamp { font-size: 1.6vw; color: #CCCCCC; background-color: #111111; padding: 0.6vh 0; border-radius: 4px; font-family: monospace; }
-        #block-wbgt { background-color: #000000; }
-        #block-logo { justify-content: center; align-items: center; padding: 0; }
-        .logo-wrapper { width: 85%; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .logo-wrapper img { width: 100%; height: 100%; object-fit: contain; }
-        
-        /* デバッグ用エリア（画面下部20%に生ソースを表示） */
-        #debug-area {
-            width: 100%;
-            height: 20%;
-            background-color: #111122;
-            color: #00FF00;
-            font-family: monospace;
-            font-size: 12px;
-            overflow-y: scroll;
-            border-top: 2px solid #00FF00;
-            padding: 10px;
+        /* 画面全体の初期化（スクロールバー非表示、黒背景） */
+        * {
             box-sizing: border-box;
-            white-space: pre-wrap;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #000000;
+            color: #FFFFFF;
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+        }
+
+        /* 5分割のコンテナ */
+        .signage-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 各エリアの共通スタイル */
+        .block {
+            flex: 1;
+            height: 100%;
+            border-right: 2px solid #222222; /* 焼き付き防止用の境界線 */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 4vh 2vw;
+            text-align: center;
+        }
+        .block:last-child {
+            border-right: none;
+        }
+
+        /* 項目タイトル */
+        .label {
+            font-size: 2.2vw;
+            font-weight: bold;
+            color: #AAAAAA;
+        }
+
+        /* 数値表示エリア */
+        .value-container {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .value {
+            font-size: 7.5vw;
+            line-height: 1;
+        }
+        .unit {
+            font-size: 3.5vw;
+            margin-left: 0.5vw;
+        }
+
+        /* 下部の日付・時刻エリア */
+        .time-stamp {
+            font-size: 1.6vw;
+            color: #CCCCCC;
+            background-color: #111111;
+            padding: 0.6vh 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        /* ① WBGT専用ブロック（背景色変化） */
+        #block-wbgt {
+            background-color: #000000; 
+            transition: background-color 0.5s ease;
+        }
+
+        /* ⑤ ロゴ専用エリア */
+        #block-logo {
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+        }
+        .logo-wrapper {
+            width: 85%;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .logo-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
         }
     </style>
 </head>
 <body>
 
     <div class="signage-container">
-        <div class="block" id="block-wbgt"><div class="label">暑さ指数 (WBGT)</div><div class="value-container"><span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span></div><div class="time-stamp" id="time-wbgt">----/--/-- --:--:--</div></div>
-        <div class="block"><div class="label">気温</div><div class="value-container"><span class="value" id="val-kion">--.-</span><span class="unit">℃</span></div><div class="time-stamp" id="time-kion">----/--/-- --:--:--</div></div>
-        <div class="block"><div class="label">黒球温度</div><div class="value-container"><span class="value" id="val-koku">--.-</span><span class="unit">℃</span></div><div class="time-stamp" id="time-koku">----/--/-- --:--:--</div></div>
-        <div class="block"><div class="label">湿度</div><div class="value-container"><span class="value" id="val-shitu">--.-</span><span class="unit">%</span></div><div class="time-stamp" id="time-shitu">----/--/-- --:--:--</div></div>
-        <div class="block" id="block-logo"><div class="logo-wrapper"><img src="logo.png" alt="ロゴ"></div></div>
+        <div class="block" id="block-wbgt">
+            <div class="label">暑さ指数 (WBGT)</div>
+            <div class="value-container">
+                <span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span>
+            </div>
+            <div class="time-stamp" id="time-wbgt">----/--/-- --:--:--</div>
+        </div>
+
+        <div class="block">
+            <div class="label">気温</div>
+            <div class="value-container">
+                <span class="value" id="val-kion">--.-</span><span class="unit">℃</span>
+            </div>
+            <div class="time-stamp" id="time-kion">----/--/-- --:--:--</div>
+        </div>
+
+        <div class="block">
+            <div class="label">黒球温度</div>
+            <div class="value-container">
+                <span class="value" id="val-koku">--.-</span><span class="unit">℃</span>
+            </div>
+            <div class="time-stamp" id="time-koku">----/--/-- --:--:--</div>
+        </div>
+
+        <div class="block">
+            <div class="label">湿度</div>
+            <div class="value-container">
+                <span class="value" id="val-shitu">--.-</span><span class="unit">%</span>
+            </div>
+            <div class="time-stamp" id="time-shitu">----/--/-- --:--:--</div>
+        </div>
+
+        <div class="block" id="block-logo">
+            <div class="logo-wrapper">
+                <img src="logo.png" alt="ロゴ">
+            </div>
+        </div>
     </div>
 
-    <div id="debug-area">【システムログ】通信開始を待っています...</div>
-
     <script>
-        const targetUrl = 'https://www2.edam.ne.jp/Public/00574/Sokutei/WBGT?LoID=2452'; 
+        // 【超重要】HTMLページではなく、E-DAMが裏で叩いている「本物のデータ通信先」を指定
+        const targetUrl = 'https://www2.edam.ne.jp/Public/00574/Sokutei/GetWbgtRN?LoID=2452'; 
+        
+        // CORS回避プロキシ
         const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(targetUrl);
-        const debugConsole = document.getElementById('debug-area');
 
         async function updateSignageData() {
             try {
                 const response = await fetch(proxyUrl);
                 if (!response.ok) throw new Error('ネットワーク応答が正常ではありません');
                 
-                const resText = await response.text();
-                
-                // デバッグ出力：取得した文字列の先頭1500文字を画面下に強制表示
-                debugConsole.textContent = "【データ受信成功】ソースの一部：\n" + resText.substring(0, 1500);
-
-                // 1. 最も広い条件で JSON っぽい部分を探す
-                const match = resText.match(/\{[\s\S]*?"Time"[\s\S]*?\}/i);
-                
-                if (!match) {
-                    debugConsole.textContent += "\n\n【エラー詳細】TimeやWbgtという文字の入ったJSONオブジェクトが見つかりません。";
-                    throw new Error('HTML内からデータオブジェクトが見つかりませんでした');
-                }
-                
-                let jsonStr = match[0];
-                if (!jsonStr.startsWith('[')) {
-                    jsonStr = '[' + jsonStr + ']';
-                }
-                
-                const data = JSON.parse(jsonStr);
+                // 今回は相手が100%純粋なJSONを返してくるエンドポイントを叩くため、直でJSONパースします
+                const data = await response.json();
                 
                 if (data && data.length > 0) {
                     const current = data[0];
 
+                    // 数値の反映
                     document.getElementById('val-wbgt').textContent = current.Wbgt ? Number(current.Wbgt).toFixed(1) : '--.-';
                     document.getElementById('val-kion').textContent = current.Kion ? Number(current.Kion).toFixed(1) : '--.-';
                     document.getElementById('val-koku').textContent = current.Koku ? Number(current.Koku).toFixed(1) : '--.-';
                     document.getElementById('val-shitu').textContent = current.Shitu ? Number(current.Shitu).toFixed(1) : '--.-';
 
+                    // 時刻の反映
                     const currentTimeString = current.Time || '----/--/-- --:--:--';
                     document.getElementById('time-wbgt').textContent = currentTimeString;
                     document.getElementById('time-kion').textContent = currentTimeString;
                     document.getElementById('time-koku').textContent = currentTimeString;
                     document.getElementById('time-shitu').textContent = currentTimeString;
 
+                    // WBGT判定による背景色アラート（焼き付き対策の深めの色）
                     const wbgtBlock = document.getElementById('block-wbgt');
                     const wbgtVal = Number(current.Wbgt);
-                    if (wbgtVal >= 31.0) { 
-                        wbgtBlock.style.backgroundColor = '#660000'; 
-                    } else if (wbgtVal >= 28.0) { 
-                        wbgtBlock.style.backgroundColor = '#553300'; 
-                    } else { 
-                        wbgtBlock.style.backgroundColor = '#000000'; 
+                    if (wbgtVal >= 31.0) {
+                        wbgtBlock.style.backgroundColor = '#660000'; // 危険（赤）
+                    } else if (wbgtVal >= 28.0) {
+                        wbgtBlock.style.backgroundColor = '#553300'; // 厳重警戒（オレンジ）
+                    } else {
+                        wbgtBlock.style.backgroundColor = '#000000'; // 通常（黒）
                     }
                 }
             } catch (error) {
                 console.error('データ取得または解析エラー:', error);
-                debugConsole.textContent += "\n\n【JavaScriptエラー】: " + error.message;
             }
         }
 
+        // 初回実行と10秒おきの高頻度自動更新
         updateSignageData();
-        setInterval(updateSignageData, 15000); 
+        setInterval(updateSignageData, 10000); 
     </script>
 </body>
 </html>
