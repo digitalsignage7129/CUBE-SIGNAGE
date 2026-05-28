@@ -1,0 +1,36 @@
+name: 現場環境データ定期更新
+
+on:
+  schedule:
+    # 5分おきに自動実行（GitHubの仕様上、多少前後することがあります）
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # 手動で即座に実行するためのボタンを有効化
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # リポジトリへの書き込み権限を許可
+
+    steps:
+    - name: コードをチェックアウト
+      uses: actions/checkout@v4
+
+    - name: Pythonのセットアップ
+      uses: actions/setup-python@v5
+      with:
+        python-style: '3.10'
+
+    - name: 依存ライブラリのインストール
+      run: |
+        pip install requests beautifulsoup4
+
+    - name: データ取得スクリプトの実行
+      run: python update_data.py
+
+    - name: 変更があった場合に自動コミット＆プッシュ
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add data.json
+        git diff --cached --quiet || (git commit -m "データ自動更新" && git push)
