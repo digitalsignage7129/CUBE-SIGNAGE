@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT実機テスト（配置最適化版）</title>
+    <title>WBGT実機テスト（文字サイズ・バランス最適化版）</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -31,7 +31,7 @@
             overflow: hidden;
         }
 
-        /* 128px正方形ブロック（縦の配置を上からきれいに等間隔分配） */
+        /* 128px正方形ブロック（縦の配置バランスを再計算） */
         .block {
             flex: 0 0 128px !important; 
             width: 128px !important; 
@@ -41,8 +41,8 @@
             border-right: 1px solid #1a1a1a;
             display: flex; 
             flex-direction: column; 
-            justify-content: space-between; /* 上から下まで美しく等間隔配置 */
-            padding: 4px 2px 2px 2px; /* 上下の余白を微調整 */
+            justify-content: space-between; 
+            padding: 5px 2px 3px 2px;
             text-align: center;
             font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
             background-color: transparent; 
@@ -50,35 +50,35 @@
         }
         .block:last-child { border-right: none; }
 
-        /* [1段目] 項目名（視認性を保ちつつ微小化） */
-        .label { font-size: 10px; font-weight: bold; line-height: 1.0; }
+        /* [1段目] 項目名：ご指定の「暑さ指数(WBGT値)」に対応（はみ出し防止で少し小さめ） */
+        .label { font-size: 9px; font-weight: bold; line-height: 1.0; white-space: nowrap; }
         .text-dark { color: #111111 !important; }
 
-        /* [2段目] 数値（一番大きく強調、ハみ出し防止のためline-heightを極小に） */
+        /* [2段目] 数値：限界まで大きく目立たせる（34px → 40pxに拡大！） */
         .value-container { 
             display: flex; 
             align-items: baseline; 
             justify-content: center; 
             line-height: 0.8; 
-            margin: -2px 0 -4px 0; /* 上下の隙間を詰めて高さを稼ぐ */
+            margin: 2px 0; /* 位置を中央に調整 */
         }
-        .value { font-size: 34px; font-family: 'Arial Black', sans-serif; font-weight: bold; }
-        .unit { font-size: 12px; margin-left: 1px; font-weight: bold; }
+        .value { font-size: 40px; font-family: 'Arial Black', sans-serif; font-weight: bold; }
+        .unit { font-size: 13px; margin-left: 1px; font-weight: bold; }
 
-        /* [3段目] 顔文字 ＋ 安全などの文字が入る横並びエリア */
+        /* [3段目] 顔文字 ＋ 状態文字エリア */
         .status-row {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 4px; /* 顔と文字の隙間 */
-            height: 38px; /* この段の高さをしっかり固定 */
+            gap: 5px; /* 横の隙間 */
+            height: 22px; /* 縦幅をコンパクトに抑える */
             width: 100%;
         }
 
-        /* 顔アイコン（裏読みステージ） */
+        /* 🎯 顔アイコン：文字サイズ（20px）に合わせて綺麗に1:1で縮小 */
         .circle-stage {
             position: relative;
-            width: 36px; height: 36px; /* 縦並び用に少しだけコンパクト（36px）にして安定化 */
+            width: 20px; height: 20px; 
             border-radius: 50%;
             overflow: hidden;
             flex-shrink: 0;
@@ -93,18 +93,18 @@
         }
         .circle-stage img.active { opacity: 1 !important; }
 
-        /* 状態の文字（安全など） */
+        /* 状態の文字：顔文字と同じ高さ（20px）の中で14pxフォントで超ハッキリ配置 */
         .status-text { 
-            font-size: 13px; /* 少し大きめにしてハッキリと */
+            font-size: 14px; 
             font-weight: 900; 
-            line-height: 1.0;
+            line-height: 20px; /* 顔の高さと完全同期 */
             white-space: nowrap;
         }
 
-        /* [4段目] 日付 ＋ 時間（最下部の帯エリア） */
+        /* [4段目] 日付 ＋ 時間 */
         .bottom-row {
             display: flex; 
-            justify-content: center; /* センター寄せに変更 */
+            justify-content: center; 
             align-items: center;
             width: 96%; 
             margin: 0 auto; 
@@ -113,7 +113,6 @@
             height: 16px;
         }
         .bottom-dark { background-color: rgba(255, 255, 255, 0.4) !important; }
-        /* 日付と時刻のフォントサイズと間隔 */
         .time-stamp { 
             font-size: 9px; 
             font-family: monospace; 
@@ -125,7 +124,7 @@
 <body>
     <div class="signage-container">
         <div class="block data-block">
-            <div class="label data-label">暑さ指数</div>
+            <div class="label data-label">暑さ指数(WBGT値)</div>
             <div class="value-container"><span class="value" id="val-wbgt">21.5</span><span class="unit">℃</span></div>
             <div class="status-row">
                 <div class="circle-stage">
@@ -178,7 +177,6 @@
     </div>
 
     <script>
-        /* 時計更新（日付 MM/DD も一緒に出力するように改良） */
         function updateClock() {
             const now = new Date();
             const month = String(now.getMonth() + 1).padStart(2, '0');
