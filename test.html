@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT実機テスト（文字サイズ・バランス最適化版）</title>
+    <title>WBGT実機テスト（不具合修正版）</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -31,7 +31,7 @@
             overflow: hidden;
         }
 
-        /* 128px正方形ブロック（縦の配置バランスを再計算） */
+        /* 128px正方形ブロック */
         .block {
             flex: 0 0 128px !important; 
             width: 128px !important; 
@@ -50,17 +50,17 @@
         }
         .block:last-child { border-right: none; }
 
-        /* [1段目] 項目名：ご指定の「暑さ指数(WBGT値)」に対応（はみ出し防止で少し小さめ） */
+        /* [1段目] 項目名 */
         .label { font-size: 9px; font-weight: bold; line-height: 1.0; white-space: nowrap; }
         .text-dark { color: #111111 !important; }
 
-        /* [2段目] 数値：限界まで大きく目立たせる（34px → 40pxに拡大！） */
+        /* [2段目] 数値（40px最大化） */
         .value-container { 
             display: flex; 
             align-items: baseline; 
             justify-content: center; 
             line-height: 0.8; 
-            margin: 2px 0; /* 位置を中央に調整 */
+            margin: 2px 0;
         }
         .value { font-size: 40px; font-family: 'Arial Black', sans-serif; font-weight: bold; }
         .unit { font-size: 13px; margin-left: 1px; font-weight: bold; }
@@ -70,12 +70,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 5px; /* 横の隙間 */
-            height: 22px; /* 縦幅をコンパクトに抑える */
+            gap: 5px; 
+            height: 22px; 
             width: 100%;
         }
 
-        /* 🎯 顔アイコン：文字サイズ（20px）に合わせて綺麗に1:1で縮小 */
+        /* 顔アイコン（サイズを文字と完全同期） */
         .circle-stage {
             position: relative;
             width: 20px; height: 20px; 
@@ -91,13 +91,14 @@
             opacity: 0;
             transition: opacity 0.1s ease;
         }
+        /* activeクラスでパッと表示 */
         .circle-stage img.active { opacity: 1 !important; }
 
-        /* 状態の文字：顔文字と同じ高さ（20px）の中で14pxフォントで超ハッキリ配置 */
+        /* 状態の文字 */
         .status-text { 
             font-size: 14px; 
             font-weight: 900; 
-            line-height: 20px; /* 顔の高さと完全同期 */
+            line-height: 20px; 
             white-space: nowrap;
         }
 
@@ -128,7 +129,7 @@
             <div class="value-container"><span class="value" id="val-wbgt">21.5</span><span class="unit">℃</span></div>
             <div class="status-row">
                 <div class="circle-stage">
-                    <img src="1.png" class="face-1"><img src="2.png" class="face-2"><img src="3.png" class="face-3"><img src="4.png" class="face-4"><img src="5.png" class="face-5 active">
+                    <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png" class="active">
                 </div>
                 <span class="status-text">ほぼ安全</span>
             </div>
@@ -140,7 +141,7 @@
             <div class="value-container"><span class="value" id="val-kion">23.0</span><span class="unit">℃</span></div>
             <div class="status-row">
                 <div class="circle-stage">
-                    <img src="1.png" class="face-1"><img src="2.png" class="face-2"><img src="3.png" class="face-3"><img src="4.png" class="face-4"><img src="5.png" class="face-5 active">
+                    <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png" class="active">
                 </div>
                 <span class="status-text">ほぼ安全</span>
             </div>
@@ -152,7 +153,7 @@
             <div class="value-container"><span class="value" id="val-koku">22.1</span><span class="unit">℃</span></div>
             <div class="status-row">
                 <div class="circle-stage">
-                    <img src="1.png" class="face-1"><img src="2.png" class="face-2"><img src="3.png" class="face-3"><img src="4.png" class="face-4"><img src="5.png" class="face-5 active">
+                    <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png" class="active">
                 </div>
                 <span class="status-text">ほぼ安全</span>
             </div>
@@ -164,7 +165,7 @@
             <div class="value-container"><span class="value" id="val-shitu">55.0</span><span class="unit">%</span></div>
             <div class="status-row">
                 <div class="circle-stage">
-                    <img src="1.png" class="face-1"><img src="2.png" class="face-2"><img src="3.png" class="face-3"><img src="4.png" class="face-4"><img src="5.png" class="face-5 active">
+                    <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png" class="active">
                 </div>
                 <span class="status-text">ほぼ安全</span>
             </div>
@@ -186,12 +187,13 @@
         }
         setInterval(updateClock, 1000);
 
+        /* 🎯 faceIndex: 0=1.png(危険), 1=2.png(厳重警戒), 2=3.png(警戒), 3=4.png(注意), 4=5.png(ほぼ安全) */
         const patterns = [
-            { wbgt: "21.5", kion: "23.2", koku: "22.0", shitu: "55.0", bgColor: "#B2F1FF", txtColor: "#111", txt: "ほぼ安全", faceClass: ".face-5" },
-            { wbgt: "24.5", kion: "26.5", koku: "25.1", shitu: "60.0", bgColor: "#B3FF99", txtColor: "#111", txt: "注　意", faceClass: ".face-4" },
-            { wbgt: "27.8", kion: "29.1", koku: "28.5", shitu: "65.0", bgColor: "#FFFF80", txtColor: "#111", txt: "警　戒", faceClass: ".face-3" },
-            { wbgt: "30.5", kion: "32.0", koku: "31.4", shitu: "70.0", bgColor: "#FFB366", txtColor: "#111", txt: "厳重警戒", faceClass: ".face-2" },
-            { wbgt: "33.1", kion: "35.4", koku: "34.8", shitu: "75.0", bgColor: "#FF5050", txtColor: "#111", txt: "危　険", faceClass: ".face-1" }
+            { wbgt: "21.5", kion: "23.2", koku: "22.0", shitu: "55.0", bgColor: "#B2F1FF", txtColor: "#111", txt: "ほぼ安全", faceIndex: 4 },
+            { wbgt: "24.5", kion: "26.5", koku: "25.1", shitu: "60.0", bgColor: "#B3FF99", txtColor: "#111", txt: "注　意", faceIndex: 3 },
+            { wbgt: "27.8", kion: "29.1", koku: "28.5", shitu: "65.0", bgColor: "#FFFF80", txtColor: "#111", txt: "警　戒", faceIndex: 2 },
+            { wbgt: "30.5", kion: "32.0", koku: "31.4", shitu: "70.0", bgColor: "#FFB366", txtColor: "#111", txt: "厳重警戒", faceIndex: 1 },
+            { wbgt: "33.1", kion: "35.4", koku: "34.8", shitu: "75.0", bgColor: "#FF5050", txtColor: "#111", txt: "危　険", faceIndex: 0 }
         ];
 
         let step = 0;
@@ -211,9 +213,13 @@
             document.querySelectorAll('.data-label').forEach(l => l.className = 'label data-label text-dark');
             document.querySelectorAll('.bottom-row').forEach(row => row.className = 'bottom-row bottom-dark');
 
+            // 🎯 インデックス番号（0〜4番目）で直接画像を確実に切り替える処理に最適化
             document.querySelectorAll('.circle-stage').forEach(stage => {
-                stage.querySelectorAll('img').forEach(img => img.classList.remove('active'));
-                stage.querySelector(p.faceClass).classList.add('active');
+                const imgs = stage.querySelectorAll('img');
+                imgs.forEach(img => img.classList.remove('active'));
+                if(imgs[p.faceIndex]) {
+                    imgs[p.faceIndex].classList.add('active');
+                }
             });
 
             step = (step + 1) % patterns.length;
