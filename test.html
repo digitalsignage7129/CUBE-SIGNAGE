@@ -3,36 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>【表示確認用】WBGTループテスト（5秒切り替え）</title>
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Expires" content="0">
+    <title>WBGTループテスト（実機フル画面版）</title>
     <style>
+        /* 画面全体を真っ黒にして余白をゼロに */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
         body {
-            background-color: #111;
-            color: #fff;
-            font-family: sans-serif;
-            padding: 20px;
+            background-color: #000000;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-        }
-
-        /* 画面上部の案内表示 */
-        .info-panel {
-            font-size: 14px;
-            background: #222;
-            padding: 10px 20px;
-            border-radius: 5px;
-            border-left: 5px solid #C4F941;
-            text-align: center;
-        }
-        #current-step-info {
-            font-weight: bold;
-            color: #FF3333;
+            justify-content: flex-start;
+            align-items: flex-start;
         }
 
         /* 640x128 絶対固定サイズ（本番と全く同じ環境） */
@@ -46,7 +35,6 @@
             max-height: 128px !important;
             background-color: #000000;
             overflow: hidden;
-            border: 2px solid #555;
         }
 
         /* 128px正方形ブロック */
@@ -175,10 +163,6 @@
 </head>
 <body>
 
-    <div class="info-panel">
-        画面確認用：5秒ごとに自動で次の段階へ切り替わります（現在は <span id="current-step-info">ほぼ安全</span> 状態を表示中）
-    </div>
-
     <div class="signage-container">
         <div class="block data-block">
             <div class="label data-label">暑さ指数 (WBGT)</div>
@@ -259,10 +243,6 @@
         function simulateNextPattern() {
             const p = testPatterns[currentStep];
 
-            // 案内文の更新
-            document.getElementById('current-step-info').textContent = p.txt.replace(/\s+/g, '');
-            document.getElementById('current-step-info').style.color = p.isDark ? '#000' : p.bgColor;
-
             // 数値のダミー更新
             document.getElementById('val-wbgt').textContent = p.wbgt;
             document.getElementById('val-kion').textContent = p.kion;
@@ -283,9 +263,9 @@
 
             // ステータス文言
             document.getElementById('status-wbgt').textContent = p.txt;
-            document.getElementById('status-kion').textContent = txt = p.txt;
-            document.getElementById('status-koku').textContent = txt = p.txt;
-            document.getElementById('status-shitu').textContent = txt = p.txt;
+            document.getElementById('status-kion').textContent = p.txt;
+            document.getElementById('status-koku').textContent = p.txt;
+            document.getElementById('status-shitu').textContent = p.txt;
 
             // 背景色と文字色の適用
             document.querySelectorAll('.data-block').forEach(b => {
