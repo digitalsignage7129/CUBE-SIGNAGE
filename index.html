@@ -6,26 +6,21 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGTループテスト（透過PNG版）</title>
+    <title>WBGT現場デジタルサイネージ（本番運用版）</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             background-color: #000000;
             overflow: hidden;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: flex-start;
-            align-items: flex-start;
+            width: 100vw; height: 100vh;
+            display: flex; justify-content: flex-start; align-items: flex-start;
         }
 
-        /* 640x128 サイネージ絶対固定サイズ */
+        /* 🎯 640x128 絶対固定（下段折り返し・崩れを完全にガード） */
         .signage-container {
-            display: flex;
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
             width: 640px !important;
             height: 128px !important;
             min-width: 640px !important;
@@ -36,258 +31,211 @@
             overflow: hidden;
         }
 
-        /* 128px正方形ブロック */
+        /* 128px正方形ブロック（ご指定の縦並び順に最適化したバランス） */
         .block {
             flex: 0 0 128px !important; 
-            width: 128px !important;
+            width: 128px !important; 
             height: 128px !important;
+            min-width: 128px !important;
+            max-width: 128px !important;
             border-right: 1px solid #1a1a1a;
-            display: flex;
-            flex-direction: column;
+            display: flex; 
+            flex-direction: column; 
             justify-content: space-between; 
-            padding: 5px 2px; 
+            padding: 5px 2px 3px 2px;
             text-align: center;
-            background-color: #000000;
-            color: #FFFFFF;
             font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
-            transition: background-color 0.4s ease, color 0.4s ease;
-            overflow: hidden;
+            background-color: transparent; 
+            transition: background-color 0.3s ease;
         }
-        .block:last-child {
-            border-right: none;
-        }
+        .block:last-child { border-right: none; }
 
-        .label {
-            font-size: 10px;
-            font-weight: bold;
-            color: #AAAAAA;
-            white-space: nowrap;
-            line-height: 1.0;
-        }
+        /* [1段目] 項目名：暑さ指数(WBGT値) */
+        .label { font-size: 9px; font-weight: bold; line-height: 1.0; white-space: nowrap; }
         .text-dark { color: #111111 !important; }
-        .text-light { color: #AAAAAA !important; }
 
-        /* 顔アイコン表示エリア */
-        .avatar-box {
-            width: 100%;
-            height: 44px;
+        /* [2段目] 数値：最大級に強調（40px） */
+        .value-container { 
+            display: flex; 
+            align-items: baseline; 
+            justify-content: center; 
+            line-height: 0.8; 
+            margin: 2px 0;
+        }
+        .value { font-size: 40px; font-family: 'Arial Black', sans-serif; font-weight: bold; }
+        .unit { font-size: 13px; margin-left: 1px; font-weight: bold; }
+
+        /* [3段目] 顔文字 ＋ 状態文字エリア */
+        .status-row {
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-top: 1px;
+            gap: 5px; 
+            height: 22px; 
+            width: 100%;
         }
-        
-        /* 🎯 きれいに丸型でくり抜く窓（透過PNGなら背景が透き通ります） */
-        .circle-window {
-            width: 44px;
-            height: 44px;
+
+        /* 顔アイコン（裏読みステージ：サイズを文字と同期） */
+        .circle-stage {
+            position: relative;
+            width: 20px; height: 20px; 
             border-radius: 50%;
             overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            flex-shrink: 0;
         }
-        
-        .avatar-img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain; /* 透過PNGの形を崩さずに綺麗に収める */
-        }
-
-        /* 数値表示 */
-        .value-container {
-            display: flex;
-            align-items: baseline;
-            justify-content: center;
-            line-height: 1.0;
-            margin-top: -1px;
-        }
-        .value {
-            font-size: 32px;
-            font-family: 'Arial Black', sans-serif;
-            font-weight: bold;
-            line-height: 1.0;
-        }
-        .unit {
-            font-size: 12px;
-            margin-left: 1px;
-            line-height: 1.0;
-        }
-
-        /* 文言 ＋ 時計 */
-        .bottom-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 96%;
-            margin: 0 auto;
-            background-color: rgba(0, 0, 0, 0.4);
-            padding: 1px 4px;
-            border-radius: 2px;
-            height: 18px;
-        }
-        .bottom-dark {
-            background-color: rgba(255, 255, 255, 0.4) !important;
-        }
-        .status-text {
-            font-size: 11px;
-            font-weight: 900;
-            white-space: nowrap;
-            line-height: 1.0;
-        }
-        .time-stamp {
-            font-size: 9px;
-            font-family: monospace;
-            white-space: nowrap;
-            line-height: 1.0;
-            color: #DDDDDD;
-        }
-        .time-dark { color: #111111 !important; }
-        .time-light { color: #DDDDDD !important; }
-
-        /* ロゴ */
-        #block-logo {
-            padding: 0 !important; 
-            background-color: #000000 !important;
-            justify-content: center;
-            align-items: center;
-        }
-        .logo-wrapper {
-            width: 128px !important;
-            height: 128px !important;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .logo-wrapper img {
-            width: 100%;
-            height: 100%;
+        .circle-stage img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             object-fit: contain;
+            opacity: 0;
+            transition: opacity 0.1s ease;
+        }
+        .circle-stage img.active { opacity: 1 !important; }
+
+        /* 状態の文字 */
+        .status-text { 
+            font-size: 14px; 
+            font-weight: 900; 
+            line-height: 20px; 
+            white-space: nowrap;
+        }
+
+        /* [4段目] 日付 ＋ 時間 */
+        .bottom-row {
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            width: 96%; 
+            margin: 0 auto; 
+            background-color: rgba(0, 0, 0, 0.4);
+            border-radius: 2px; 
+            height: 16px;
+        }
+        .bottom-dark { background-color: rgba(255, 255, 255, 0.4) !important; }
+        .time-stamp { 
+            font-size: 9px; 
+            font-family: monospace; 
+            line-height: 1.0; 
+            letter-spacing: 0.5px;
         }
     </style>
 </head>
 <body>
-
     <div class="signage-container">
         <div class="block data-block">
-            <div class="label data-label">暑さ指数 (WBGT)</div>
-            <div class="avatar-box"><div class="circle-window"><img src="5.png" id="img-wbgt" class="avatar-img" alt="顔"></div></div>
-            <div class="value-container">
-                <span class="value" id="val-wbgt">21.5</span><span class="unit">℃</span>
+            <div class="label data-label">暑さ指数(WBGT値)</div>
+            <div class="value-container"><span class="value" id="val-wbgt">0.0</span><span class="unit">℃</span></div>
+            <div class="status-row">
+                <div class="circle-stage" id="stage-wbgt">
+                    <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png">
+                </div>
+                <span class="status-text" id="status-wbgt">-</span>
             </div>
-            <div class="bottom-row" id="bottom-wbgt">
-                <span class="status-text" id="status-wbgt">ほぼ安全</span>
-                <span class="time-stamp data-time">00:00:00</span>
-            </div>
+            <div class="bottom-row"><span class="time-stamp data-time">00/00 00:00:00</span></div>
         </div>
 
         <div class="block data-block">
             <div class="label data-label">気温</div>
-            <div class="avatar-box"><div class="circle-window"><img src="5.png" id="img-kion" class="avatar-img" alt="顔"></div></div>
-            <div class="value-container">
-                <span class="value" id="val-kion">23.0</span><span class="unit">℃</span>
+            <div class="value-container"><span class="value" id="val-kion">0.0</span><span class="unit">℃</span></div>
+            <div class="status-row">
+                <div class="circle-stage" id="stage-kion">
+                    <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png">
+                </div>
+                <span class="status-text" id="status-kion">-</span>
             </div>
-            <div class="bottom-row" id="bottom-kion">
-                <span class="status-text" id="status-kion">ほぼ安全</span>
-                <span class="time-stamp data-time">00:00:00</span>
-            </div>
+            <div class="bottom-row"><span class="time-stamp data-time">00/00 00:00:00</span></div>
         </div>
 
         <div class="block data-block">
             <div class="label data-label">黒球温度</div>
-            <div class="avatar-box"><div class="circle-window"><img src="5.png" id="img-koku" class="avatar-img" alt="顔"></div></div>
-            <div class="value-container">
-                <span class="value" id="val-koku">22.1</span><span class="unit">℃</span>
+            <div class="value-container"><span class="value" id="val-koku">0.0</span><span class="unit">℃</span></div>
+            <div class="status-row">
+                <div class="circle-stage" id="stage-koku">
+                    <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png">
+                </div>
+                <span class="status-text" id="status-koku">-</span>
             </div>
-            <div class="bottom-row" id="bottom-koku">
-                <span class="status-text" id="status-koku">ほぼ安全</span>
-                <span class="time-stamp data-time">00:00:00</span>
-            </div>
+            <div class="bottom-row"><span class="time-stamp data-time">00/00 00:00:00</span></div>
         </div>
 
         <div class="block data-block">
             <div class="label data-label">湿度</div>
-            <div class="avatar-box"><div class="circle-window"><img src="5.png" id="img-shitu" class="avatar-img" alt="顔"></div></div>
-            <div class="value-container">
-                <span class="value" id="val-shitu">55.0</span><span class="unit">%</span>
+            <div class="value-container"><span class="value" id="val-shitu">0.0</span><span class="unit">%</span></div>
+            <div class="status-row">
+                <div class="circle-stage" id="stage-shitu">
+                    <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png">
+                </div>
+                <span class="status-text" id="status-shitu">-</span>
             </div>
-            <div class="bottom-row" id="bottom-shitu">
-                <span class="status-text" id="status-shitu">ほぼ安全</span>
-                <span class="time-stamp data-time">00:00:00</span>
-            </div>
+            <div class="bottom-row"><span class="time-stamp data-time">00/00 00:00:00</span></div>
         </div>
 
-        <div class="block" id="block-logo">
-            <div class="logo-wrapper">
-                <img src="logo.png" alt="ロゴ">
-            </div>
+        <div class="block" style="background:#000; padding:0; display:flex; align-items:center; justify-content:center;">
+            <img src="logo.png" style="width:100%; height:100%; object-fit:contain;">
         </div>
     </div>
 
     <script>
-        // 時計更新
+        /* 1秒ごとに時計を更新（MM/DD hh:mm:ss） */
         function updateClock() {
             const now = new Date();
-            const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const date = String(now.getDate()).padStart(2, '0');
+            const timeString = `${month}/${date} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
             document.querySelectorAll('.data-time').forEach(el => el.textContent = timeString);
         }
-        updateClock();
         setInterval(updateClock, 1000);
+        updateClock();
 
-        // 💡 画像の読み込み先をすべて「.png」に修正しました
-        const testPatterns = [
-            { wbgt: "21.5", kion: "23.2", koku: "22.0", shitu: "55.0", bgColor: "#A2C4D2", textColor: "#111111", isDark: true,  txt: "ほぼ安全", img: "5.png", label: "text-dark" },
-            { wbgt: "24.5", kion: "26.5", koku: "25.1", shitu: "60.0", bgColor: "#BCE49B", textColor: "#111111", isDark: true,  txt: "注　意", img: "4.png", label: "text-dark" },
-            { wbgt: "27.8", kion: "29.1", koku: "28.5", shitu: "65.0", bgColor: "#B7732D", textColor: "#FFFFFF", isDark: false, txt: "警　戒", img: "3.png", label: "text-light" },
-            { wbgt: "30.5", kion: "32.0", koku: "31.4", shitu: "70.0", bgColor: "#7C3E1E", textColor: "#FFFFFF", isDark: false, txt: "厳重警戒", img: "2.png", label: "text-light" },
-            { wbgt: "33.1", kion: "35.4", koku: "34.8", shitu: "75.0", bgColor: "#A63A3A", textColor: "#FFFFFF", isDark: false, txt: "危　険", img: "1.png", label: "text-light" }
-        ];
+        /* 🎯 各リスクレベルに応じたデザインの定義設定 */
+        const levelDesigns = {
+            "danger":    { bgColor: "#FF5050", txtColor: "#111", txt: "危　険", faceIndex: 0 },   // 1.png
+            "severe":    { bgColor: "#FFB366", txtColor: "#111", txt: "厳重警戒", faceIndex: 1 }, // 2.png
+            "warning":   { bgColor: "#FFFF80", txtColor: "#111", txt: "警　戒", faceIndex: 2 },   // 3.png
+            "attention": { bgColor: "#B3FF99", txtColor: "#111", txt: "注　意", faceIndex: 3 },   // 4.png
+            "safe":      { bgColor: "#B2F1FF", txtColor: "#111", txt: "ほぼ安全", faceIndex: 4 }    // 5.png
+        };
 
-        let currentStep = 0;
+        /**
+         * 🎯 本番用：システム側からデータを流し込んで画面を一発更新する関数
+         * @param {string} currentLevel - "danger", "severe", "warning", "attention", "safe" のいずれか
+         * @param {number|string} wbgt - 暑さ指数
+         * @param {number|string} kion - 気温
+         * @param {number|string} koku - 黒球温度
+         * @param {number|string} shitu - 湿度
+         */
+        function updateSignageData(currentLevel, wbgt, kion, koku, shitu) {
+            const d = levelDesigns[currentLevel] || levelDesigns["safe"];
+            
+            // 1. 数値の書き換え
+            document.getElementById('val-wbgt').textContent = wbgt;
+            document.getElementById('val-kion').textContent = kion;
+            document.getElementById('val-koku').textContent = koku;
+            document.getElementById('val-shitu').textContent = shitu;
 
-        function simulateNextPattern() {
-            const p = testPatterns[currentStep];
-
-            document.getElementById('val-wbgt').textContent = p.wbgt;
-            document.getElementById('val-kion').textContent = p.kion;
-            document.getElementById('val-koku').textContent = p.koku;
-            document.getElementById('val-shitu').textContent = p.shitu;
-
-            const imgIds = ['img-wbgt', 'img-kion', 'img-koku', 'img-shitu'];
-            imgIds.forEach(id => {
-                document.getElementById(id).src = p.img;
-            });
-
-            document.getElementById('status-wbgt').textContent = p.txt;
-            document.getElementById('status-kion').textContent = p.txt;
-            document.getElementById('status-koku').textContent = p.txt;
-            document.getElementById('status-shitu').textContent = p.txt;
-
+            // 2. 背景色と文字色の同期適用
             document.querySelectorAll('.data-block').forEach(b => {
-                b.style.backgroundColor = p.bgColor;
-                b.style.color = p.textColor;
+                b.style.backgroundColor = d.bgColor;
+                b.style.color = d.txtColor;
             });
+            document.querySelectorAll('.status-text').forEach(t => t.textContent = d.txt);
+            document.querySelectorAll('.data-label').forEach(l => l.className = 'label data-label text-dark');
+            document.querySelectorAll('.bottom-row').forEach(row => row.className = 'bottom-row bottom-dark');
 
-            document.querySelectorAll('.data-label').forEach(l => {
-                l.className = 'label data-label ' + p.label;
-            });
-
-            document.querySelectorAll('.bottom-row').forEach(row => {
-                if (p.isDark) {
-                    row.classList.add('bottom-dark');
-                } else {
-                    row.classList.remove('bottom-dark');
+            // 3. 顔アイコンのインデックス切り替え（超高速裏読み仕様）
+            document.querySelectorAll('.circle-stage').forEach(stage => {
+                const imgs = stage.querySelectorAll('img');
+                imgs.forEach(img => img.classList.remove('active'));
+                if(imgs[d.faceIndex]) {
+                    imgs[d.faceIndex].classList.add('active');
                 }
             });
-            document.querySelectorAll('.time-stamp').forEach(t => {
-                t.className = 'time-stamp data-time ' + (p.isDark ? 'time-dark' : 'time-light');
-            });
-
-            currentStep = (currentStep + 1) % testPatterns.length;
         }
 
-        simulateNextPattern();
-        setInterval(simulateNextPattern, 5000);
+        // 🚀 初期表示用の呼び出し例（本番環境に合わせて初期値をセットしてください）
+        // 例: ほぼ安全状態でスタートする場合
+        updateSignageData("safe", "21.5", "23.0", "22.1", "55.0");
     </script>
 </body>
 </html>
