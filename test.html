@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGTループテスト（完全座標修正版）</title>
+    <title>WBGTループテスト（単体画像版）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -77,19 +77,22 @@
             margin-top: 1px;
         }
         
-        /* 🎯 修正版クリップ窓
-           横幅 916px の大元画像を 388px にリサイズすることで、
-           直径 104px の黒丸をぴったり「44px」の窓サイズに縮小させています。 */
-        .face-sprite {
+        /* 🎯 切り抜いてもらった画像を、ガタガタさせずに綺麗な「44pxの正円」の窓に収める設定 */
+        .circle-window {
             width: 44px;
             height: 44px;
-            border-radius: 50%; /* 綺麗な正円 */
-            background-image: url('ダウンロード.png');
-            background-repeat: no-repeat;
-            background-size: 388px auto; 
-            /* X軸は -76px で顔の中心線に固定。Y軸はJSでカチッと切り替えます */
-            background-position: -76px 0px; 
-            transition: background-position 0.4s ease;
+            border-radius: 50%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #000000; /* 万が一端っこに隙間ができても黒で隠す */
+        }
+        
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* 縦横比を維持したまま窓にピッタリ収める */
         }
 
         /* 数値表示 */
@@ -169,7 +172,7 @@
     <div class="signage-container">
         <div class="block data-block">
             <div class="label data-label">暑さ指数 (WBGT)</div>
-            <div class="avatar-box"><div id="img-wbgt" class="face-sprite"></div></div>
+            <div class="avatar-box"><div class="circle-window"><img src="5.jpg" id="img-wbgt" class="avatar-img" alt="顔"></div></div>
             <div class="value-container">
                 <span class="value" id="val-wbgt">21.5</span><span class="unit">℃</span>
             </div>
@@ -181,7 +184,7 @@
 
         <div class="block data-block">
             <div class="label data-label">気温</div>
-            <div class="avatar-box"><div id="img-kion" class="face-sprite"></div></div>
+            <div class="avatar-box"><div class="circle-window"><img src="5.jpg" id="img-kion" class="avatar-img" alt="顔"></div></div>
             <div class="value-container">
                 <span class="value" id="val-kion">23.0</span><span class="unit">℃</span>
             </div>
@@ -193,7 +196,7 @@
 
         <div class="block data-block">
             <div class="label data-label">黒球温度</div>
-            <div class="avatar-box"><div id="img-koku" class="face-sprite"></div></div>
+            <div class="avatar-box"><div class="circle-window"><img src="5.jpg" id="img-koku" class="avatar-img" alt="顔"></div></div>
             <div class="value-container">
                 <span class="value" id="val-koku">22.1</span><span class="unit">℃</span>
             </div>
@@ -205,7 +208,7 @@
 
         <div class="block data-block">
             <div class="label data-label">湿度</div>
-            <div class="avatar-box"><div id="img-shitu" class="face-sprite"></div></div>
+            <div class="avatar-box"><div class="circle-window"><img src="5.jpg" id="img-shitu" class="avatar-img" alt="顔"></div></div>
             <div class="value-container">
                 <span class="value" id="val-shitu">55.0</span><span class="unit">%</span>
             </div>
@@ -223,6 +226,7 @@
     </div>
 
     <script>
+        // 時計更新
         function updateClock() {
             const now = new Date();
             const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
@@ -231,14 +235,14 @@
         updateClock();
         setInterval(updateClock, 1000);
 
-        /* 💡 1px の狂いもない完全精密座標（縮小率換算済み）
-           上から「ほぼ安全」「注意」「警戒」「厳重警戒」「危険」の順でループします */
+        /* 💡 各ステップごとに読み込む「画像名（1.jpg〜5.jpg）」を直接指定するように変更しました。
+           これなら絶対にズレようがありません！ */
         const testPatterns = [
-            { wbgt: "21.5", kion: "23.2", koku: "22.0", shitu: "55.0", bgColor: "#A2C4D2", textColor: "#111111", isDark: true,  txt: "ほぼ安全", bgPos: "-76px -228px", label: "text-dark" },
-            { wbgt: "24.5", kion: "26.5", koku: "25.1", shitu: "60.0", bgColor: "#BCE49B", textColor: "#111111", isDark: true,  txt: "注　意", bgPos: "-76px -177px", label: "text-dark" },
-            { wbgt: "27.8", kion: "29.1", koku: "28.5", shitu: "65.0", bgColor: "#B7732D", textColor: "#FFFFFF", isDark: false, txt: "警　戒", bgPos: "-76px -125px", label: "text-light" },
-            { wbgt: "30.5", kion: "32.0", koku: "31.4", shitu: "70.0", bgColor: "#7C3E1E", textColor: "#FFFFFF", isDark: false, txt: "厳重警戒", bgPos: "-76px -73px",  label: "text-light" },
-            { wbgt: "33.1", kion: "35.4", koku: "34.8", shitu: "75.0", bgColor: "#A63A3A", textColor: "#FFFFFF", isDark: false, txt: "危　険", bgPos: "-76px -22px",  label: "text-light" }
+            { wbgt: "21.5", kion: "23.2", koku: "22.0", shitu: "55.0", bgColor: "#A2C4D2", textColor: "#111111", isDark: true,  txt: "ほぼ安全", img: "5.jpg", label: "text-dark" },
+            { wbgt: "24.5", kion: "26.5", koku: "25.1", shitu: "60.0", bgColor: "#BCE49B", textColor: "#111111", isDark: true,  txt: "注　意", img: "4.jpg", label: "text-dark" },
+            { wbgt: "27.8", kion: "29.1", koku: "28.5", shitu: "65.0", bgColor: "#B7732D", textColor: "#FFFFFF", isDark: false, txt: "警　戒", img: "3.jpg", label: "text-light" },
+            { wbgt: "30.5", kion: "32.0", koku: "31.4", shitu: "70.0", bgColor: "#7C3E1E", textColor: "#FFFFFF", isDark: false, txt: "厳重警戒", img: "2.jpg", label: "text-light" },
+            { wbgt: "33.1", kion: "35.4", koku: "34.8", shitu: "75.0", bgColor: "#A63A3A", textColor: "#FFFFFF", isDark: false, txt: "危　険", img: "1.jpg", label: "text-light" }
         ];
 
         let currentStep = 0;
@@ -246,30 +250,36 @@
         function simulateNextPattern() {
             const p = testPatterns[currentStep];
 
+            // 数値更新
             document.getElementById('val-wbgt').textContent = p.wbgt;
             document.getElementById('val-kion').textContent = p.kion;
             document.getElementById('val-koku').textContent = p.koku;
             document.getElementById('val-shitu').textContent = p.shitu;
 
+            // ✨ 画像のsrcをそのまま書き換える（確実）
             const imgIds = ['img-wbgt', 'img-kion', 'img-koku', 'img-shitu'];
             imgIds.forEach(id => {
-                document.getElementById(id).style.backgroundPosition = p.bgPos;
+                document.getElementById(id).src = p.img;
             });
 
+            // 文言更新
             document.getElementById('status-wbgt').textContent = p.txt;
             document.getElementById('status-kion').textContent = p.txt;
             document.getElementById('status-koku').textContent = p.txt;
             document.getElementById('status-shitu').textContent = p.txt;
 
+            // 背景色と文字色
             document.querySelectorAll('.data-block').forEach(b => {
                 b.style.backgroundColor = p.bgColor;
                 b.style.color = p.textColor;
             });
 
+            // ラベル文字色
             document.querySelectorAll('.data-label').forEach(l => {
                 l.className = 'label data-label ' + p.label;
             });
 
+            // 下段エリアの明暗調整
             document.querySelectorAll('.bottom-row').forEach(row => {
                 if (p.isDark) {
                     row.classList.add('bottom-dark');
