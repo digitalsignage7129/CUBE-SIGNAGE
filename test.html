@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【表示確認用】WBGTループテスト（5秒切り替え）</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background-color: #111;
+            color: #fff;
+            font-family: sans-serif;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        /* 画面上部の案内表示 */
+        .info-panel {
+            font-size: 14px;
+            background: #222;
+            padding: 10px 20px;
+            border-radius: 5px;
+            border-left: 5px solid #C4F941;
+            text-align: center;
+        }
+        #current-step-info {
+            font-weight: bold;
+            color: #FF3333;
+        }
+
+        /* 640x128 絶対固定サイズ（本番と全く同じ環境） */
+        .signage-container {
+            display: flex;
+            width: 640px !important;
+            height: 128px !important;
+            min-width: 640px !important;
+            max-width: 640px !important;
+            min-height: 128px !important;
+            max-height: 128px !important;
+            background-color: #000000;
+            overflow: hidden;
+            border: 2px solid #555;
+        }
+
+        /* 128px正方形ブロック */
+        .block {
+            flex: 0 0 128px !important; 
+            width: 128px !important;
+            height: 128px !important;
+            border-right: 1px solid #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; 
+            padding: 5px 2px; 
+            text-align: center;
+            background-color: #000000;
+            color: #FFFFFF;
+            font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            transition: background-color 0.4s ease, color 0.4s ease;
+            overflow: hidden;
+        }
+        .block:last-child {
+            border-right: none;
+        }
+
+        .label {
+            font-size: 10px;
+            font-weight: bold;
+            color: #AAAAAA;
+            white-space: nowrap;
+            line-height: 1.0;
+        }
+        .text-dark { color: #111111 !important; }
+        .text-light { color: #AAAAAA !important; }
+
+        /* 顔写真エリア */
+        .avatar-box {
+            width: 100%;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1px;
+            overflow: hidden;
+        }
+        .avatar-img {
+            height: 100%;
+            width: auto;
+            object-fit: contain;
+            border-radius: 50%;
+            filter: brightness(1.65); /* 暗いPNG画像の明るさ自動補正 */
+        }
+        .no-filter {
+            filter: none !important;
+        }
+
+        /* 数値表示 */
+        .value-container {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            line-height: 1.0;
+            margin-top: -1px;
+        }
+        .value {
+            font-size: 32px;
+            font-family: 'Arial Black', sans-serif;
+            font-weight: bold;
+            line-height: 1.0;
+        }
+        .unit {
+            font-size: 12px;
+            margin-left: 1px;
+            line-height: 1.0;
+        }
+
+        /* 文言 ＋ 時計 */
+        .bottom-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 96%;
+            margin: 0 auto;
+            background-color: rgba(0, 0, 0, 0.4);
+            padding: 1px 4px;
+            border-radius: 2px;
+            height: 18px;
+        }
+        .bottom-dark {
+            background-color: rgba(255, 255, 255, 0.4) !important;
+        }
+        .status-text {
+            font-size: 11px;
+            font-weight: 900;
+            white-space: nowrap;
+            line-height: 1.0;
+        }
+        .time-stamp {
+            font-size: 9px;
+            font-family: monospace;
+            white-space: nowrap;
+            line-height: 1.0;
+            color: #DDDDDD;
+        }
+        .time-dark { color: #111111 !important; }
+        .time-light { color: #DDDDDD !important; }
+
+        /* ロゴ */
+        #block-logo {
+            padding: 0 !important; 
+            background-color: #000000 !important;
+            justify-content: center;
+            align-items: center;
+        }
+        .logo-wrapper {
+            width: 128px !important;
+            height: 128px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .logo-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="info-panel">
+        画面確認用：5秒ごとに自動で次の段階へ切り替わります（現在は <span id="current-step-info">ほぼ安全</span> 状態を表示中）
+    </div>
+
+    <div class="signage-container">
+        <div class="block data-block">
+            <div class="label data-label">暑さ指数 (WBGT)</div>
+            <div class="avatar-box"><img src="5.png" id="img-wbgt" class="avatar-img" alt="顔"></div>
+            <div class="value-container">
+                <span class="value" id="val-wbgt">21.5</span><span class="unit">℃</span>
+            </div>
+            <div class="bottom-row" id="bottom-wbgt">
+                <span class="status-text" id="status-wbgt">ほぼ安全</span>
+                <span class="time-stamp data-time">00:00:00</span>
+            </div>
+        </div>
+
+        <div class="block data-block">
+            <div class="label data-label">気温</div>
+            <div class="avatar-box"><img src="5.png" id="img-kion" class="avatar-img" alt="顔"></div>
+            <div class="value-container">
+                <span class="value" id="val-kion">23.0</span><span class="unit">℃</span>
+            </div>
+            <div class="bottom-row" id="bottom-kion">
+                <span class="status-text" id="status-kion">ほぼ安全</span>
+                <span class="time-stamp data-time">00:00:00</span>
+            </div>
+        </div>
+
+        <div class="block data-block">
+            <div class="label data-label">黒球温度</div>
+            <div class="avatar-box"><img src="5.png" id="img-koku" class="avatar-img" alt="顔"></div>
+            <div class="value-container">
+                <span class="value" id="val-koku">22.1</span><span class="unit">℃</span>
+            </div>
+            <div class="bottom-row" id="bottom-koku">
+                <span class="status-text" id="status-koku">ほぼ安全</span>
+                <span class="time-stamp data-time">00:00:00</span>
+            </div>
+        </div>
+
+        <div class="block data-block">
+            <div class="label data-label">湿度</div>
+            <div class="avatar-box"><img src="5.png" id="img-shitu" class="avatar-img" alt="顔"></div>
+            <div class="value-container">
+                <span class="value" id="val-shitu">55.0</span><span class="unit">%</span>
+            </div>
+            <div class="bottom-row" id="bottom-shitu">
+                <span class="status-text" id="status-shitu">ほぼ安全</span>
+                <span class="time-stamp data-time">00:00:00</span>
+            </div>
+        </div>
+
+        <div class="block" id="block-logo">
+            <div class="logo-wrapper">
+                <img src="logo.png" alt="ロゴ">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 時計を1秒ずつ進める処理
+        function updateClock() {
+            const now = new Date();
+            const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            document.querySelectorAll('.data-time').forEach(el => el.textContent = timeString);
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // 5段階のテストデータパターン
+        const testPatterns = [
+            { wbgt: "21.5", kion: "23.2", koku: "22.0", shitu: "55.0", bgColor: "#4D666D", textColor: "#FFFFFF", isDark: false, txt: "ほぼ安全", img: "5.png", filter: true, label: "text-light" },
+            { wbgt: "24.5", kion: "26.5", koku: "25.1", shitu: "60.0", bgColor: "#C4F941", textColor: "#111111", isDark: true,  txt: "注　意", img: "4.png", filter: false, label: "text-dark" },
+            { wbgt: "27.8", kion: "29.1", koku: "28.5", shitu: "65.0", bgColor: "#B7732D", textColor: "#FFFFFF", isDark: false, txt: "警　戒", img: "3.png", filter: true, label: "text-light" },
+            { wbgt: "30.5", kion: "32.0", koku: "31.4", shitu: "70.0", bgColor: "#7C3E1E", textColor: "#FFFFFF", isDark: false, txt: "厳重警戒", img: "2.png", filter: true, label: "text-light" },
+            { wbgt: "33.1", kion: "35.4", koku: "34.8", shitu: "75.0", bgColor: "#A63A3A", textColor: "#FFFFFF", isDark: false, txt: "危　険", img: "1.png", filter: true, label: "text-light" }
+        ];
+
+        let currentStep = 0;
+
+        function simulateNextPattern() {
+            const p = testPatterns[currentStep];
+
+            // 案内文の更新
+            document.getElementById('current-step-info').textContent = p.txt.replace(/\s+/g, '');
+            document.getElementById('current-step-info').style.color = p.isDark ? '#000' : p.bgColor;
+
+            // 数値のダミー更新
+            document.getElementById('val-wbgt').textContent = p.wbgt;
+            document.getElementById('val-kion').textContent = p.kion;
+            document.getElementById('val-koku').textContent = p.koku;
+            document.getElementById('val-shitu').textContent = p.shitu;
+
+            // 顔画像の差し替えと明るさ補正
+            const imgIds = ['img-wbgt', 'img-kion', 'img-koku', 'img-shitu'];
+            imgIds.forEach(id => {
+                const imgEl = document.getElementById(id);
+                imgEl.src = p.img;
+                if (p.filter) {
+                    imgEl.classList.remove('no-filter');
+                } else {
+                    imgEl.classList.add('no-filter');
+                }
+            });
+
+            // ステータス文言
+            document.getElementById('status-wbgt').textContent = p.txt;
+            document.getElementById('status-kion').textContent = txt = p.txt;
+            document.getElementById('status-koku').textContent = txt = p.txt;
+            document.getElementById('status-shitu').textContent = txt = p.txt;
+
+            // 背景色と文字色の適用
+            document.querySelectorAll('.data-block').forEach(b => {
+                b.style.backgroundColor = p.bgColor;
+                b.style.color = p.textColor;
+            });
+
+            // ラベル色のクラス変更
+            document.querySelectorAll('.data-label').forEach(l => {
+                l.className = 'label data-label ' + p.label;
+            });
+
+            // 下段時計エリアの明暗調整
+            document.querySelectorAll('.bottom-row').forEach(row => {
+                if (p.isDark) {
+                    row.classList.add('bottom-dark');
+                } else {
+                    row.classList.remove('bottom-dark');
+                }
+            });
+            document.querySelectorAll('.time-stamp').forEach(t => {
+                t.className = 'time-stamp data-time ' + (p.isDark ? 'time-dark' : 'time-light');
+            });
+
+            // 次のステップへ（最後まで行ったら0に戻る）
+            currentStep = (currentStep + 1) % testPatterns.length;
+        }
+
+        // 起動時に1回実行し、以降5秒ごとにループ
+        simulateNextPattern();
+        setInterval(simulateNextPattern, 5000);
+    </script>
+</body>
+</html>
