@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT環境モニター（現場公式画像連動版）</title>
+    <title>WBGT環境モニター（現場公式PNG連動版）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -82,11 +82,11 @@
             height: 100%;
             width: auto;
             object-fit: contain;
-            border-radius: 50%; /* 丸く切り抜き */
-            /* 💡 暗い画像（1,2,3,5）の明るさを1.6倍に引き上げ、緑(4)と同等の鮮やかさに補正するフィルター */
+            border-radius: 50%; /* 丸く綺麗に切り抜き */
+            /* 暗いPNG画像（1,2,3,5）の明るさを引き上げて緑(4)と同等の鮮やかさに自動補正 */
             filter: brightness(1.65); 
         }
-        /* 4.jpg（注意）だけは最初から明るいので、二重に明るくならないよう補正をオフにする */
+        /* 4.png（注意）は最初から明るいので、二重に明るくならないよう補正をオフ */
         .no-filter {
             filter: none !important;
         }
@@ -168,7 +168,7 @@
     <div class="signage-container">
         <div class="block data-block">
             <div class="label data-label">暑さ指数 (WBGT)</div>
-            <div class="avatar-box"><img src="5.jpg" id="img-wbgt" class="avatar-img" alt="顔"></div>
+            <div class="avatar-box"><img src="5.png" id="img-wbgt" class="avatar-img" alt="顔"></div>
             <div class="value-container">
                 <span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span>
             </div>
@@ -180,7 +180,7 @@
 
         <div class="block data-block">
             <div class="label data-label">気温</div>
-            <div class="avatar-box"><img src="5.jpg" id="img-kion" class="avatar-img" alt="顔"></div>
+            <div class="avatar-box"><img src="5.png" id="img-kion" class="avatar-img" alt="顔"></div>
             <div class="value-container">
                 <span class="value" id="val-kion">--.-</span><span class="unit">℃</span>
             </div>
@@ -192,7 +192,7 @@
 
         <div class="block data-block">
             <div class="label data-label">黒球温度</div>
-            <div class="avatar-box"><img src="5.jpg" id="img-koku" class="avatar-img" alt="顔"></div>
+            <div class="avatar-box"><img src="5.png" id="img-koku" class="avatar-img" alt="顔"></div>
             <div class="value-container">
                 <span class="value" id="val-koku">--.-</span><span class="unit">℃</span>
             </div>
@@ -204,7 +204,7 @@
 
         <div class="block data-block">
             <div class="label data-label">湿度</div>
-            <div class="avatar-box"><img src="5.jpg" id="img-shitu" class="avatar-img" alt="顔"></div>
+            <div class="avatar-box"><img src="5.png" id="img-shitu" class="avatar-img" alt="顔"></div>
             <div class="value-container">
                 <span class="value" id="val-shitu">--.-</span><span class="unit">%</span>
             </div>
@@ -258,30 +258,30 @@
                     let labelColorClass = 'text-light';
                     let isDark = false;
                     let txt = 'ほぼ安全';
-                    let imgFile = '5.jpg';         // ほぼ安全顔
-                    let useFilter = true;          // 明るさ補正をかける
+                    let imgFile = '5.png';         // 拡張子を.pngに変更
+                    let useFilter = true;          
 
                     if (current.Wbgt) {
                         if (wbgtVal >= 32.0) {
                             bgColor = '#A63A3A';   // 危険
                             txt = '危　険';
-                            imgFile = '1.jpg';
+                            imgFile = '1.png';
                         } else if (wbgtVal >= 29.0) {
                             bgColor = '#7C3E1E';   // 厳重警戒
                             txt = '厳重警戒';
-                            imgFile = '2.jpg';
+                            imgFile = '2.png';
                         } else if (wbgtVal >= 26.0) {
                             bgColor = '#B7732D';   // 警戒
                             txt = '警　戒';
-                            imgFile = '3.jpg';
+                            imgFile = '3.png';
                         } else if (wbgtVal >= 22.0) {
                             bgColor = '#C4F941';   // 注意
-                            textColor = '#111111'; // ここだけ黒文字
+                            textColor = '#111111'; 
                             labelColorClass = 'text-dark';
                             isDark = true;
                             txt = '注　意';
-                            imgFile = '4.jpg';
-                            useFilter = false;     // 4.jpgは最初から明るいので補正しない
+                            imgFile = '4.png';
+                            useFilter = false;     // 4.pngは明るさ補正しない
                         }
                     }
 
