@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGTループテスト（色合い修正版）</title>
+    <title>WBGTループテスト（一覧画像連動版）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -23,7 +23,7 @@
             align-items: flex-start;
         }
 
-        /* 640x128 絶対固定サイズ */
+        /* 640x128 サイネージ絶対固定サイズ */
         .signage-container {
             display: flex;
             width: 640px !important;
@@ -67,20 +67,30 @@
         .text-dark { color: #111111 !important; }
         .text-light { color: #AAAAAA !important; }
 
-        /* 顔写真エリア */
+        /* 顔アイコン表示エリア */
         .avatar-box {
             width: 100%;
-            height: 42px;
+            height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin-top: 1px;
-            overflow: hidden;
         }
-        .avatar-img {
-            height: 100%;
-            width: auto;
-            object-fit: contain;
+        
+        /* 💡 ゲットした「ダウンロード.png」から顔の黒丸部分だけを正確に型抜きするクリップ窓 */
+        .face-sprite {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%; /* 綺麗な正円にする */
+            background-image: url('ダウンロード.png'); /* 保存した画像を読み込む */
+            background-repeat: no-repeat;
+            /* 縦長の大きな画像から、顔のパーツがある部分だけを虫眼鏡で覗くように拡大縮小（リサイズ）
+               元画像の横幅（約700px強）から、顔の黒丸のサイズ（約64px相当）を44pxの窓に合わせる計算
+            */
+            background-size: 470px auto; 
+            background-position: -58px -10px; /* ここをJavaScriptで縦にズラします */
+            transition: background-position 0.4s ease;
+            box-shadow: 0 0 4px rgba(0,0,0,0.3);
         }
 
         /* 数値表示 */
@@ -160,7 +170,7 @@
     <div class="signage-container">
         <div class="block data-block">
             <div class="label data-label">暑さ指数 (WBGT)</div>
-            <div class="avatar-box"><img src="5.png" id="img-wbgt" class="avatar-img" alt="顔"></div>
+            <div class="avatar-box"><div id="img-wbgt" class="face-sprite"></div></div>
             <div class="value-container">
                 <span class="value" id="val-wbgt">21.5</span><span class="unit">℃</span>
             </div>
@@ -172,7 +182,7 @@
 
         <div class="block data-block">
             <div class="label data-label">気温</div>
-            <div class="avatar-box"><img src="5.png" id="img-kion" class="avatar-img" alt="顔"></div>
+            <div class="avatar-box"><div id="img-kion" class="face-sprite"></div></div>
             <div class="value-container">
                 <span class="value" id="val-kion">23.0</span><span class="unit">℃</span>
             </div>
@@ -184,7 +194,7 @@
 
         <div class="block data-block">
             <div class="label data-label">黒球温度</div>
-            <div class="avatar-box"><img src="5.png" id="img-koku" class="avatar-img" alt="顔"></div>
+            <div class="avatar-box"><div id="img-koku" class="face-sprite"></div></div>
             <div class="value-container">
                 <span class="value" id="val-koku">22.1</span><span class="unit">℃</span>
             </div>
@@ -196,7 +206,7 @@
 
         <div class="block data-block">
             <div class="label data-label">湿度</div>
-            <div class="avatar-box"><img src="5.png" id="img-shitu" class="avatar-img" alt="顔"></div>
+            <div class="avatar-box"><div id="img-shitu" class="face-sprite"></div></div>
             <div class="value-container">
                 <span class="value" id="val-shitu">55.0</span><span class="unit">%</span>
             </div>
@@ -214,6 +224,7 @@
     </div>
 
     <script>
+        // 時計更新
         function updateClock() {
             const now = new Date();
             const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
@@ -222,13 +233,15 @@
         updateClock();
         setInterval(updateClock, 1000);
 
-        // 💡 ご指摘の通り色合いを優しいトーン（薄水色、薄緑）へ微調整
+        /* 💡 画像内の各キャラクターの「y軸（縦方向）の座標」をピクセル単位で計算しました。
+           画像の一番下が「ほぼ安全（10px）」、一番上が「危険（-248px）」になるようにスライドさせます。
+        */
         const testPatterns = [
-            { wbgt: "21.5", kion: "23.2", koku: "22.0", shitu: "55.0", bgColor: "#A2C4D2", textColor: "#111111", isDark: true,  txt: "ほぼ安全", img: "5.png", label: "text-dark" }, // 優しい薄水色
-            { wbgt: "24.5", kion: "26.5", koku: "25.1", shitu: "60.0", bgColor: "#BCE49B", textColor: "#111111", isDark: true,  txt: "注　意", img: "4.png", label: "text-dark" }, // 優しい薄緑
-            { wbgt: "27.8", kion: "29.1", koku: "28.5", shitu: "65.0", bgColor: "#B7732D", textColor: "#FFFFFF", isDark: false, txt: "警　戒", img: "3.png", label: "text-light" },
-            { wbgt: "30.5", kion: "32.0", koku: "31.4", shitu: "70.0", bgColor: "#7C3E1E", textColor: "#FFFFFF", isDark: false, txt: "厳重警戒", img: "2.png", label: "text-light" },
-            { wbgt: "33.1", kion: "35.4", koku: "34.8", shitu: "75.0", bgColor: "#A63A3A", textColor: "#FFFFFF", isDark: false, txt: "危　険", img: "1.png", label: "text-light" }
+            { wbgt: "21.5", kion: "23.2", koku: "22.0", shitu: "55.0", bgColor: "#A2C4D2", textColor: "#111111", isDark: true,  txt: "ほぼ安全", bgPos: "-58px -248px", label: "text-dark" }, // 一番下の顔
+            { wbgt: "24.5", kion: "26.5", koku: "25.1", shitu: "60.0", bgColor: "#BCE49B", textColor: "#111111", isDark: true,  txt: "注　意", bgPos: "-58px -189px", label: "text-dark" },
+            { wbgt: "27.8", kion: "29.1", koku: "28.5", shitu: "65.0", bgColor: "#B7732D", textColor: "#FFFFFF", isDark: false, txt: "警　戒", bgPos: "-58px -129px", label: "text-light" },
+            { wbgt: "30.5", kion: "32.0", koku: "31.4", shitu: "70.0", bgColor: "#7C3E1E", textColor: "#FFFFFF", isDark: false, txt: "厳重警戒", bgPos: "-58px -70px", label: "text-light" },
+            { wbgt: "33.1", kion: "35.4", koku: "34.8", shitu: "75.0", bgColor: "#A63A3A", textColor: "#FFFFFF", isDark: false, txt: "危　険", bgPos: "-58px -10px", label: "text-light" } // 一番上の顔
         ];
 
         let currentStep = 0;
@@ -236,30 +249,36 @@
         function simulateNextPattern() {
             const p = testPatterns[currentStep];
 
+            // 数値更新
             document.getElementById('val-wbgt').textContent = p.wbgt;
             document.getElementById('val-kion').textContent = p.kion;
             document.getElementById('val-koku').textContent = p.koku;
             document.getElementById('val-shitu').textContent = p.shitu;
 
+            // 5枚の画像位置を一斉にズラす
             const imgIds = ['img-wbgt', 'img-kion', 'img-koku', 'img-shitu'];
             imgIds.forEach(id => {
-                document.getElementById(id).src = p.img;
+                document.getElementById(id).style.backgroundPosition = p.bgPos;
             });
 
+            // 文言更新
             document.getElementById('status-wbgt').textContent = p.txt;
             document.getElementById('status-kion').textContent = p.txt;
             document.getElementById('status-koku').textContent = p.txt;
             document.getElementById('status-shitu').textContent = p.txt;
 
+            // 背景色と文字色
             document.querySelectorAll('.data-block').forEach(b => {
                 b.style.backgroundColor = p.bgColor;
                 b.style.color = p.textColor;
             });
 
+            // ラベル文字色
             document.querySelectorAll('.data-label').forEach(l => {
                 l.className = 'label data-label ' + p.label;
             });
 
+            // 下段エリアの明暗調整
             document.querySelectorAll('.bottom-row').forEach(row => {
                 if (p.isDark) {
                     row.classList.add('bottom-dark');
@@ -271,9 +290,11 @@
                 t.className = 'time-stamp data-time ' + (p.isDark ? 'time-dark' : 'time-light');
             });
 
+            // 5秒ごとに次のレベルへ
             currentStep = (currentStep + 1) % testPatterns.length;
         }
 
+        // 初回実行とループセット
         simulateNextPattern();
         setInterval(simulateNextPattern, 5000);
     </script>
