@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT環境モニター（元サイト完全再現版）</title>
+    <title>WBGT環境モニター（現場公式画像連動版）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -36,7 +36,7 @@
             overflow: hidden;
         }
 
-        /* 各128pxブロック */
+        /* 128px正方形ブロック */
         .block {
             flex: 0 0 128px !important; 
             width: 128px !important;
@@ -45,7 +45,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between; 
-            padding: 4px 2px; 
+            padding: 5px 2px; 
             text-align: center;
             background-color: #000000;
             color: #FFFFFF;
@@ -68,29 +68,39 @@
         .text-dark { color: #111111 !important; }
         .text-light { color: #AAAAAA !important; }
 
-        /* ご提案いただいた縦並び配置（顔 ➡️ 数値 ➡️ 文言） */
+        /* 【上段】切り抜いた顔写真エリア */
         .avatar-box {
             width: 100%;
-            height: 40px;
+            height: 42px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin-top: 1px;
+            overflow: hidden;
         }
-        .avatar-box svg {
+        .avatar-img {
             height: 100%;
             width: auto;
+            object-fit: contain;
+            border-radius: 50%; /* 丸く切り抜き */
+            /* 💡 暗い画像（1,2,3,5）の明るさを1.6倍に引き上げ、緑(4)と同等の鮮やかさに補正するフィルター */
+            filter: brightness(1.65); 
+        }
+        /* 4.jpg（注意）だけは最初から明るいので、二重に明るくならないよう補正をオフにする */
+        .no-filter {
+            filter: none !important;
         }
 
+        /* 【中段】数値表示 */
         .value-container {
             display: flex;
             align-items: baseline;
             justify-content: center;
             line-height: 1.0;
-            margin-top: -2px;
+            margin-top: -1px;
         }
         .value {
-            font-size: 30px;
+            font-size: 32px;
             font-family: 'Arial Black', sans-serif;
             font-weight: bold;
             line-height: 1.0;
@@ -101,7 +111,7 @@
             line-height: 1.0;
         }
 
-        /* 下段：文言 ＋ 時計 */
+        /* 【下段】文言 ＋ 時計 */
         .bottom-row {
             display: flex;
             justify-content: space-between;
@@ -158,7 +168,7 @@
     <div class="signage-container">
         <div class="block data-block">
             <div class="label data-label">暑さ指数 (WBGT)</div>
-            <div class="avatar-box" id="avatar-wbgt"></div>
+            <div class="avatar-box"><img src="5.jpg" id="img-wbgt" class="avatar-img" alt="顔"></div>
             <div class="value-container">
                 <span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span>
             </div>
@@ -170,7 +180,7 @@
 
         <div class="block data-block">
             <div class="label data-label">気温</div>
-            <div class="avatar-box" id="avatar-kion"></div>
+            <div class="avatar-box"><img src="5.jpg" id="img-kion" class="avatar-img" alt="顔"></div>
             <div class="value-container">
                 <span class="value" id="val-kion">--.-</span><span class="unit">℃</span>
             </div>
@@ -182,7 +192,7 @@
 
         <div class="block data-block">
             <div class="label data-label">黒球温度</div>
-            <div class="avatar-box" id="avatar-koku"></div>
+            <div class="avatar-box"><img src="5.jpg" id="img-koku" class="avatar-img" alt="顔"></div>
             <div class="value-container">
                 <span class="value" id="val-koku">--.-</span><span class="unit">℃</span>
             </div>
@@ -194,7 +204,7 @@
 
         <div class="block data-block">
             <div class="label data-label">湿度</div>
-            <div class="avatar-box" id="avatar-shitu"></div>
+            <div class="avatar-box"><img src="5.jpg" id="img-shitu" class="avatar-img" alt="顔"></div>
             <div class="value-container">
                 <span class="value" id="val-shitu">--.-</span><span class="unit">%</span>
             </div>
@@ -213,66 +223,6 @@
 
     <script>
         const baseUrl = 'https://www2.edam.ne.jp/Json/WBGTNumData/2452';
-
-        // 元サイトの画像をドット単位でトレースした正確なヘルメット造形
-        const svgHeader = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">`;
-        const svgFooter = `</svg>`;
-        const workerBase = `
-            <circle cx="50" cy="54" r="32" fill="#E2BA7A" stroke="#000" stroke-width="3.5"/>
-            <path d="M16 46 C 16 12, 84 12, 84 46 Z" fill="#FFF275" stroke="#000" stroke-width="3.5"/>
-            <path d="M10 45 C 10 41, 90 41, 90 45 C 90 49, 10 49, 10 45 Z" fill="#FFF275" stroke="#000" stroke-width="3"/>
-            <rect x="46" y="22" width="8" height="13" fill="#009944"/>
-            <rect x="43.5" y="24.5" width="13" height="8" fill="#009944"/>
-            <path d="M14 54 C 11 54, 11 60, 14 60 Z" fill="#E2BA7A" stroke="#000" stroke-width="2"/>
-            <path d="M86 54 C 89 54, 89 60, 86 60 Z" fill="#E2BA7A" stroke="#000" stroke-width="2"/>
-        `;
-
-        // 元サイト画像と100%同じ顔パーツの配置
-        const faceExpressions = {
-            safe: workerBase + `
-                <path d="M30 52 L 42 52" stroke="#000" stroke-width="3" stroke-linecap="round"/>
-                <path d="M58 52 L 70 52" stroke="#000" stroke-width="3" stroke-linecap="round"/>
-                <circle cx="36" cy="60" r="3.5" fill="#000"/>
-                <circle cx="64" cy="60" r="3.5" fill="#000"/>
-                <path d="M42 68 Q 50 75 58 68" fill="none" stroke="#000" stroke-width="3.5" stroke-linecap="round"/>
-            `,
-            warn: workerBase + `
-                <path d="M28 51 L 42 51" stroke="#000" stroke-width="4.5" stroke-linecap="round"/>
-                <path d="M58 51 L 72 51" stroke="#000" stroke-width="4.5" stroke-linecap="round"/>
-                <circle cx="35" cy="60" r="4" fill="#000"/>
-                <circle cx="65" cy="60" r="4" fill="#000"/>
-                <line x1="42" y1="71" x2="58" y2="71" stroke="#000" stroke-width="4" stroke-linecap="round"/>
-                <path d="M22 62 Q 20 65 22 68 Q 25 68 25 65 Z" fill="#66CCFF" stroke="#000" stroke-width="1"/>
-            `,
-            alert: workerBase + `
-                <path d="M30 53 L 42 49" stroke="#000" stroke-width="4" stroke-linecap="round"/>
-                <path d="M70 53 L 58 49" stroke="#000" stroke-width="4" stroke-linecap="round"/>
-                <path d="M32 62 Q 36 58 40 62" fill="none" stroke="#000" stroke-width="3.5" stroke-linecap="round"/>
-                <path d="M60 62 Q 64 58 68 62" fill="none" stroke="#000" stroke-width="3.5" stroke-linecap="round"/>
-                <path d="M40 73 Q 50 66 58 73" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/>
-                <path d="M21 64 Q 19 67 21 70 Q 24 70 24 67 Z" fill="#66CCFF" stroke="#000" stroke-width="1"/>
-                <path d="M79 64 Q 77 67 79 70 Q 82 70 82 67 Z" fill="#66CCFF" stroke="#000" stroke-width="1"/>
-            `,
-            severe: workerBase + `
-                <path d="M30 51 L 42 47" stroke="#000" stroke-width="4.5" stroke-linecap="round"/>
-                <path d="M70 51 L 58 47" stroke="#000" stroke-width="4.5" stroke-linecap="round"/>
-                <path d="M31 56 L 39 64 M 39 56 L 31 64" stroke="#000" stroke-width="4" stroke-linecap="round"/>
-                <path d="M61 56 L 69 64 M 69 56 L 61 64" stroke="#000" stroke-width="4" stroke-linecap="round"/>
-                <path d="M38 72 L 42 69 L 46 72 L 50 69 L 54 72 L 58 69 L 62 72" fill="none" stroke="#000" stroke-width="3.5" stroke-linecap="round"/>
-                <path d="M21 61 T 22 69" fill="none" stroke="#66CCFF" stroke-width="2.5" stroke-linecap="round"/>
-                <path d="M25 65 T 26 73" fill="none" stroke="#66CCFF" stroke-width="2.5" stroke-linecap="round"/>
-                <path d="M78 61 T 77 69" fill="none" stroke="#66CCFF" stroke-width="2.5" stroke-linecap="round"/>
-            `,
-            danger: workerBase + `
-                <path d="M30 47 L 42 51" stroke="#000" stroke-width="5" stroke-linecap="round"/>
-                <path d="M70 47 L 58 51" stroke="#000" stroke-width="5" stroke-linecap="round"/>
-                <path d="M29 55 L 34 60 L 39 55 M 32 58 L 37 63" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round"/>
-                <path d="M61 55 L 66 60 L 71 55 M 64 58 L 69 63" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round"/>
-                <circle cx="50" cy="71" r="7" fill="none" stroke="#000" stroke-width="4"/>
-                <path d="M20 58 L 20 74 M 25 63 L 25 78" fill="none" stroke="#66CCFF" stroke-width="3" stroke-linecap="round"/>
-                <path d="M79 58 L 79 74 M 74 63 L 74 78" fill="none" stroke="#66CCFF" stroke-width="3" stroke-linecap="round"/>
-            `
-        };
 
         function updateClock() {
             const now = new Date();
@@ -302,43 +252,50 @@
                     document.getElementById('val-koku').textContent = current.Koku ? Number(current.Koku).toFixed(1) : '--.-';
                     document.getElementById('val-shitu').textContent = current.Shitu ? Number(current.Shitu).toFixed(1) : '--.-';
 
-                    // 💡 画像から完全に色抽出した「目に優しいくすんだ現場カラー」
+                    // 正しい背景色の抽出
                     let bgColor = '#4D666D';       // ほぼ安全
                     let textColor = '#FFFFFF';
                     let labelColorClass = 'text-light';
                     let isDark = false;
                     let txt = 'ほぼ安全';
-                    let svgKey = 'safe';
+                    let imgFile = '5.jpg';         // ほぼ安全顔
+                    let useFilter = true;          // 明るさ補正をかける
 
                     if (current.Wbgt) {
                         if (wbgtVal >= 32.0) {
-                            bgColor = '#A63A3A';   // 危険 (深くすんだ赤)
+                            bgColor = '#A63A3A';   // 危険
                             txt = '危　険';
-                            svgKey = 'danger';
+                            imgFile = '1.jpg';
                         } else if (wbgtVal >= 29.0) {
-                            bgColor = '#7C3E1E';   // 厳重警戒 (渋い茶オレンジ)
+                            bgColor = '#7C3E1E';   // 厳重警戒
                             txt = '厳重警戒';
-                            svgKey = 'severe';
+                            imgFile = '2.jpg';
                         } else if (wbgtVal >= 26.0) {
-                            bgColor = '#B7732D';   // 警戒 (くすんだ黄土)
+                            bgColor = '#B7732D';   // 警戒
                             txt = '警　戒';
-                            svgKey = 'alert';
+                            imgFile = '3.jpg';
                         } else if (wbgtVal >= 22.0) {
-                            bgColor = '#C4F941';   // 注意 (薄くすんだ黄緑)
-                            textColor = '#111111'; // 元サイト同様にここだけ黒文字
+                            bgColor = '#C4F941';   // 注意
+                            textColor = '#111111'; // ここだけ黒文字
                             labelColorClass = 'text-dark';
                             isDark = true;
                             txt = '注　意';
-                            svgKey = 'warn';
+                            imgFile = '4.jpg';
+                            useFilter = false;     // 4.jpgは最初から明るいので補正しない
                         }
                     }
 
-                    // 全4箇所のブロックに同じ顔グラフィックと文字を一斉連動
-                    const svgHtml = svgHeader + faceExpressions[svgKey] + svgFooter;
-                    document.getElementById('avatar-wbgt').innerHTML = svgHtml;
-                    document.getElementById('avatar-kion').innerHTML = svgHtml;
-                    document.getElementById('avatar-koku').innerHTML = svgHtml;
-                    document.getElementById('avatar-shitu').innerHTML = svgHtml;
+                    // 各ブロックの画像・テキスト・色の更新
+                    const imgIds = ['img-wbgt', 'img-kion', 'img-koku', 'img-shitu'];
+                    imgIds.forEach(id => {
+                        const imgEl = document.getElementById(id);
+                        imgEl.src = imgFile;
+                        if (useFilter) {
+                            imgEl.classList.remove('no-filter');
+                        } else {
+                            imgEl.classList.add('no-filter');
+                        }
+                    });
 
                     document.getElementById('status-wbgt').textContent = txt;
                     document.getElementById('status-kion').textContent = txt;
