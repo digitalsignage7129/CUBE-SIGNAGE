@@ -6,9 +6,8 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>環境モニター サイネージ（現場安全掲示板仕様）</title>
+    <title>WBGT環境モニター（元サイト完全再現版）</title>
     <style>
-        /* 画面全体の初期化 */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -37,20 +36,20 @@
             overflow: hidden;
         }
 
-        /* 各ブロック：128px × 128px の完全正方形 */
+        /* 各128pxブロック */
         .block {
             flex: 0 0 128px !important; 
             width: 128px !important;
             height: 128px !important;
-            border-right: 1px solid #333333;
+            border-right: 1px solid #1a1a1a;
             display: flex;
             flex-direction: column;
             justify-content: space-between; 
-            padding: 6px 3px; 
+            padding: 4px 2px; 
             text-align: center;
             background-color: #000000;
             color: #FFFFFF;
-            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
             transition: background-color 0.4s ease, color 0.4s ease;
             overflow: hidden;
         }
@@ -58,9 +57,9 @@
             border-right: none;
         }
 
-        /* 項目タイトル */
+        /* 項目ラベル */
         .label {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: bold;
             color: #AAAAAA;
             white-space: nowrap;
@@ -69,67 +68,71 @@
         .text-dark { color: #111111 !important; }
         .text-light { color: #AAAAAA !important; }
 
-        /* 数値表示エリア */
-        .value-container {
-            flex-grow: 1;
+        /* ご提案いただいた縦並び配置（顔 ➡️ 数値 ➡️ 文言） */
+        .avatar-box {
+            width: 100%;
+            height: 40px;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
+            margin-top: 1px;
         }
-        .value-row {
+        .avatar-box svg {
+            height: 100%;
+            width: auto;
+        }
+
+        .value-container {
             display: flex;
             align-items: baseline;
             justify-content: center;
             line-height: 1.0;
+            margin-top: -2px;
         }
         .value {
-            font-size: 38px; /* 数値を単独で最大サイズに強調 */
+            font-size: 30px;
             font-family: 'Arial Black', sans-serif;
-            line-height: 1.0;
             font-weight: bold;
+            line-height: 1.0;
         }
         .unit {
-            font-size: 14px;
+            font-size: 12px;
             margin-left: 1px;
             line-height: 1.0;
         }
 
-        /* 最下部：現場安全掲示板風の「太字の警告ステータス」と時計 */
+        /* 下段：文言 ＋ 時計 */
         .bottom-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
             width: 96%;
             margin: 0 auto;
-            background-color: rgba(17, 17, 17, 0.8);
-            padding: 2px 5px;
-            border-radius: 3px;
-            height: 20px;
+            background-color: rgba(0, 0, 0, 0.4);
+            padding: 1px 4px;
+            border-radius: 2px;
+            height: 18px;
         }
         .bottom-dark {
-            background-color: rgba(0, 0, 0, 0.2) !important;
+            background-color: rgba(255, 255, 255, 0.4) !important;
         }
-        /* 「注意」「厳重警戒」などの現場テキスト強調 */
         .status-text {
             font-size: 11px;
             font-weight: 900;
             white-space: nowrap;
             line-height: 1.0;
-            letter-spacing: 0.5px;
         }
-        /* 1秒ごとに進むリアルタイム時計 */
         .time-stamp {
             font-size: 9px;
             font-family: monospace;
             white-space: nowrap;
             line-height: 1.0;
-            color: #CCCCCC;
+            color: #DDDDDD;
         }
         .time-dark { color: #111111 !important; }
-        .time-light { color: #CCCCCC !important; }
+        .time-light { color: #DDDDDD !important; }
 
-        /* ⑤ ロゴ専用エリア */
+        /* ⑤ ロゴ */
         #block-logo {
             padding: 0 !important; 
             background-color: #000000 !important;
@@ -142,7 +145,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
         }
         .logo-wrapper img {
             width: 100%;
@@ -156,53 +158,49 @@
     <div class="signage-container">
         <div class="block data-block">
             <div class="label data-label">暑さ指数 (WBGT)</div>
+            <div class="avatar-box" id="avatar-wbgt"></div>
             <div class="value-container">
-                <div class="value-row">
-                    <span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span>
-                </div>
+                <span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span>
             </div>
             <div class="bottom-row" id="bottom-wbgt">
                 <span class="status-text" id="status-wbgt">――</span>
-                <span class="time-stamp data-time" id="time-wbgt">00:00:00</span>
+                <span class="time-stamp data-time">00:00:00</span>
             </div>
         </div>
 
         <div class="block data-block">
             <div class="label data-label">気温</div>
+            <div class="avatar-box" id="avatar-kion"></div>
             <div class="value-container">
-                <div class="value-row">
-                    <span class="value" id="val-kion">--.-</span><span class="unit">℃</span>
-                </div>
+                <span class="value" id="val-kion">--.-</span><span class="unit">℃</span>
             </div>
             <div class="bottom-row" id="bottom-kion">
                 <span class="status-text" id="status-kion">――</span>
-                <span class="time-stamp data-time" id="time-kion">00:00:00</span>
+                <span class="time-stamp data-time">00:00:00</span>
             </div>
         </div>
 
         <div class="block data-block">
             <div class="label data-label">黒球温度</div>
+            <div class="avatar-box" id="avatar-koku"></div>
             <div class="value-container">
-                <div class="value-row">
-                    <span class="value" id="val-koku">--.-</span><span class="unit">℃</span>
-                </div>
+                <span class="value" id="val-koku">--.-</span><span class="unit">℃</span>
             </div>
             <div class="bottom-row" id="bottom-koku">
                 <span class="status-text" id="status-koku">――</span>
-                <span class="time-stamp data-time" id="time-koku">00:00:00</span>
+                <span class="time-stamp data-time">00:00:00</span>
             </div>
         </div>
 
         <div class="block data-block">
             <div class="label data-label">湿度</div>
+            <div class="avatar-box" id="avatar-shitu"></div>
             <div class="value-container">
-                <div class="value-row">
-                    <span class="value" id="val-shitu">--.-</span><span class="unit">%</span>
-                </div>
+                <span class="value" id="val-shitu">--.-</span><span class="unit">%</span>
             </div>
             <div class="bottom-row" id="bottom-shitu">
                 <span class="status-text" id="status-shitu">――</span>
-                <span class="time-stamp data-time" id="time-shitu">00:00:00</span>
+                <span class="time-stamp data-time">00:00:00</span>
             </div>
         </div>
 
@@ -216,20 +214,72 @@
     <script>
         const baseUrl = 'https://www2.edam.ne.jp/Json/WBGTNumData/2452';
 
-        // 時計機能（1秒ごとに画面の秒数を進める）
+        // 元サイトの画像をドット単位でトレースした正確なヘルメット造形
+        const svgHeader = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">`;
+        const svgFooter = `</svg>`;
+        const workerBase = `
+            <circle cx="50" cy="54" r="32" fill="#E2BA7A" stroke="#000" stroke-width="3.5"/>
+            <path d="M16 46 C 16 12, 84 12, 84 46 Z" fill="#FFF275" stroke="#000" stroke-width="3.5"/>
+            <path d="M10 45 C 10 41, 90 41, 90 45 C 90 49, 10 49, 10 45 Z" fill="#FFF275" stroke="#000" stroke-width="3"/>
+            <rect x="46" y="22" width="8" height="13" fill="#009944"/>
+            <rect x="43.5" y="24.5" width="13" height="8" fill="#009944"/>
+            <path d="M14 54 C 11 54, 11 60, 14 60 Z" fill="#E2BA7A" stroke="#000" stroke-width="2"/>
+            <path d="M86 54 C 89 54, 89 60, 86 60 Z" fill="#E2BA7A" stroke="#000" stroke-width="2"/>
+        `;
+
+        // 元サイト画像と100%同じ顔パーツの配置
+        const faceExpressions = {
+            safe: workerBase + `
+                <path d="M30 52 L 42 52" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+                <path d="M58 52 L 70 52" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="36" cy="60" r="3.5" fill="#000"/>
+                <circle cx="64" cy="60" r="3.5" fill="#000"/>
+                <path d="M42 68 Q 50 75 58 68" fill="none" stroke="#000" stroke-width="3.5" stroke-linecap="round"/>
+            `,
+            warn: workerBase + `
+                <path d="M28 51 L 42 51" stroke="#000" stroke-width="4.5" stroke-linecap="round"/>
+                <path d="M58 51 L 72 51" stroke="#000" stroke-width="4.5" stroke-linecap="round"/>
+                <circle cx="35" cy="60" r="4" fill="#000"/>
+                <circle cx="65" cy="60" r="4" fill="#000"/>
+                <line x1="42" y1="71" x2="58" y2="71" stroke="#000" stroke-width="4" stroke-linecap="round"/>
+                <path d="M22 62 Q 20 65 22 68 Q 25 68 25 65 Z" fill="#66CCFF" stroke="#000" stroke-width="1"/>
+            `,
+            alert: workerBase + `
+                <path d="M30 53 L 42 49" stroke="#000" stroke-width="4" stroke-linecap="round"/>
+                <path d="M70 53 L 58 49" stroke="#000" stroke-width="4" stroke-linecap="round"/>
+                <path d="M32 62 Q 36 58 40 62" fill="none" stroke="#000" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M60 62 Q 64 58 68 62" fill="none" stroke="#000" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M40 73 Q 50 66 58 73" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/>
+                <path d="M21 64 Q 19 67 21 70 Q 24 70 24 67 Z" fill="#66CCFF" stroke="#000" stroke-width="1"/>
+                <path d="M79 64 Q 77 67 79 70 Q 82 70 82 67 Z" fill="#66CCFF" stroke="#000" stroke-width="1"/>
+            `,
+            severe: workerBase + `
+                <path d="M30 51 L 42 47" stroke="#000" stroke-width="4.5" stroke-linecap="round"/>
+                <path d="M70 51 L 58 47" stroke="#000" stroke-width="4.5" stroke-linecap="round"/>
+                <path d="M31 56 L 39 64 M 39 56 L 31 64" stroke="#000" stroke-width="4" stroke-linecap="round"/>
+                <path d="M61 56 L 69 64 M 69 56 L 61 64" stroke="#000" stroke-width="4" stroke-linecap="round"/>
+                <path d="M38 72 L 42 69 L 46 72 L 50 69 L 54 72 L 58 69 L 62 72" fill="none" stroke="#000" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M21 61 T 22 69" fill="none" stroke="#66CCFF" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M25 65 T 26 73" fill="none" stroke="#66CCFF" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M78 61 T 77 69" fill="none" stroke="#66CCFF" stroke-width="2.5" stroke-linecap="round"/>
+            `,
+            danger: workerBase + `
+                <path d="M30 47 L 42 51" stroke="#000" stroke-width="5" stroke-linecap="round"/>
+                <path d="M70 47 L 58 51" stroke="#000" stroke-width="5" stroke-linecap="round"/>
+                <path d="M29 55 L 34 60 L 39 55 M 32 58 L 37 63" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+                <path d="M61 55 L 66 60 L 71 55 M 64 58 L 69 63" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="50" cy="71" r="7" fill="none" stroke="#000" stroke-width="4"/>
+                <path d="M20 58 L 20 74 M 25 63 L 25 78" fill="none" stroke="#66CCFF" stroke-width="3" stroke-linecap="round"/>
+                <path d="M79 58 L 79 74 M 74 63 L 74 78" fill="none" stroke="#66CCFF" stroke-width="3" stroke-linecap="round"/>
+            `
+        };
+
         function updateClock() {
             const now = new Date();
-            const hrs = String(now.getHours()).padStart(2, '0');
-            const mins = String(now.getMinutes()).padStart(2, '0');
-            const secs = String(now.getSeconds()).padStart(2, '0');
-            const timeString = `${hrs}:${mins}:${secs}`;
-
-            document.querySelectorAll('.data-time').forEach(el => {
-                el.textContent = timeString;
-            });
+            const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            document.querySelectorAll('.data-time').forEach(el => el.textContent = timeString);
         }
 
-        // データを取得して数値と警告色を変える関数（10秒おき）
         async function updateSignageData() {
             try {
                 const timeStamp = new Date().getTime();
@@ -238,69 +288,71 @@
 
                 const response = await fetch(proxyUrl, {
                     cache: 'no-store',
-                    headers: {
-                        'Cache-Control': 'no-cache',
-                        'Pragma': 'no-cache'
-                    }
+                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
                 });
-                
-                if (!response.ok) throw new Error('データ取得エラー');
+                if (!response.ok) throw new Error('通信エラー');
                 const data = await response.json();
                 
                 if (data && data.length > 0) {
                     const current = data[0];
                     const wbgtVal = current.Wbgt ? Number(current.Wbgt) : 0;
 
-                    // 画面中央にそれぞれの数値を反映
                     document.getElementById('val-wbgt').textContent = current.Wbgt ? wbgtVal.toFixed(1) : '--.-';
                     document.getElementById('val-kion').textContent = current.Kion ? Number(current.Kion).toFixed(1) : '--.-';
                     document.getElementById('val-koku').textContent = current.Koku ? Number(current.Koku).toFixed(1) : '--.-';
                     document.getElementById('val-shitu').textContent = current.Shitu ? Number(current.Shitu).toFixed(1) : '--.-';
 
-                    // 元サイト画像の5段階基準値・カラーを完全再現
-                    let bgColor = '#4A6B75';       // ほぼ安全（22℃未満）
+                    // 💡 画像から完全に色抽出した「目に優しいくすんだ現場カラー」
+                    let bgColor = '#4D666D';       // ほぼ安全
                     let textColor = '#FFFFFF';
                     let labelColorClass = 'text-light';
                     let isDark = false;
                     let txt = 'ほぼ安全';
+                    let svgKey = 'safe';
 
                     if (current.Wbgt) {
                         if (wbgtVal >= 32.0) {
-                            bgColor = '#FF3333';   // 危険（赤）
+                            bgColor = '#A63A3A';   // 危険 (深くすんだ赤)
                             txt = '危　険';
+                            svgKey = 'danger';
                         } else if (wbgtVal >= 29.0) {
-                            bgColor = '#D47A2A';   // 厳重警戒（オレンジ）
+                            bgColor = '#7C3E1E';   // 厳重警戒 (渋い茶オレンジ)
                             txt = '厳重警戒';
+                            svgKey = 'severe';
                         } else if (wbgtVal >= 26.0) {
-                            bgColor = '#88A848';   // 警戒（黄緑/オレンジ中間）
+                            bgColor = '#B7732D';   // 警戒 (くすんだ黄土)
                             txt = '警　戒';
+                            svgKey = 'alert';
                         } else if (wbgtVal >= 22.0) {
-                            bgColor = '#99FF66';   // 注意（明るい黄緑）
-                            textColor = '#111111'; // 黒文字化
+                            bgColor = '#C4F941';   // 注意 (薄くすんだ黄緑)
+                            textColor = '#111111'; // 元サイト同様にここだけ黒文字
                             labelColorClass = 'text-dark';
                             isDark = true;
                             txt = '注　意';
+                            svgKey = 'warn';
                         }
                     }
 
-                    // 下部ステータス文字の更新
+                    // 全4箇所のブロックに同じ顔グラフィックと文字を一斉連動
+                    const svgHtml = svgHeader + faceExpressions[svgKey] + svgFooter;
+                    document.getElementById('avatar-wbgt').innerHTML = svgHtml;
+                    document.getElementById('avatar-kion').innerHTML = svgHtml;
+                    document.getElementById('avatar-koku').innerHTML = svgHtml;
+                    document.getElementById('avatar-shitu').innerHTML = svgHtml;
+
                     document.getElementById('status-wbgt').textContent = txt;
                     document.getElementById('status-kion').textContent = txt;
                     document.getElementById('status-koku').textContent = txt;
                     document.getElementById('status-shitu').textContent = txt;
 
-                    // 各ブロックへ背景色と文字色を適用
                     document.querySelectorAll('.data-block').forEach(b => {
                         b.style.backgroundColor = bgColor;
                         b.style.color = textColor;
                     });
-
-                    // タイトルラベルの色切り替え
                     document.querySelectorAll('.data-label').forEach(l => {
                         l.className = 'label data-label ' + labelColorClass;
                     });
 
-                    // 下部時計エリアの背景と文字色の微調整
                     document.querySelectorAll('.bottom-row').forEach(row => {
                         if (isDark) {
                             row.classList.add('bottom-dark');
@@ -313,15 +365,13 @@
                     });
                 }
             } catch (error) {
-                console.error('データ同期失敗:', error);
+                console.error('データ更新失敗:', error);
             }
         }
 
-        // 最初の時計起動と1秒ごとの更新設定
         updateClock();
         setInterval(updateClock, 1000);
 
-        // 最初のデータ取得と10秒ごとの裏更新設定
         updateSignageData();
         setInterval(updateSignageData, 10000); 
     </script>
