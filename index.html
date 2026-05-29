@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT現場デジタルサイネージ（本番運用版）</title>
+    <title>WBGT現場デジタルサイネージ（URL自動追従版）</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -16,7 +16,7 @@
             display: flex; justify-content: flex-start; align-items: flex-start;
         }
 
-        /* 🎯 640x128 絶対固定（下段折り返し・崩れを完全にガード） */
+        /* 640x128 絶対固定（下段折り返し・崩れを完全にガード） */
         .signage-container {
             display: flex !important;
             flex-direction: row !important;
@@ -31,7 +31,7 @@
             overflow: hidden;
         }
 
-        /* 128px正方形ブロック（ご指定の縦並び順に最適化したバランス） */
+        /* 128px正方形ブロック（縦の配置バランスを最適化） */
         .block {
             flex: 0 0 128px !important; 
             width: 128px !important; 
@@ -127,7 +127,7 @@
             <div class="label data-label">暑さ指数(WBGT値)</div>
             <div class="value-container"><span class="value" id="val-wbgt">0.0</span><span class="unit">℃</span></div>
             <div class="status-row">
-                <div class="circle-stage" id="stage-wbgt">
+                <div class="circle-stage">
                     <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png">
                 </div>
                 <span class="status-text" id="status-wbgt">-</span>
@@ -139,7 +139,7 @@
             <div class="label data-label">気温</div>
             <div class="value-container"><span class="value" id="val-kion">0.0</span><span class="unit">℃</span></div>
             <div class="status-row">
-                <div class="circle-stage" id="stage-kion">
+                <div class="circle-stage">
                     <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png">
                 </div>
                 <span class="status-text" id="status-kion">-</span>
@@ -151,7 +151,7 @@
             <div class="label data-label">黒球温度</div>
             <div class="value-container"><span class="value" id="val-koku">0.0</span><span class="unit">℃</span></div>
             <div class="status-row">
-                <div class="circle-stage" id="stage-koku">
+                <div class="circle-stage">
                     <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png">
                 </div>
                 <span class="status-text" id="status-koku">-</span>
@@ -163,7 +163,7 @@
             <div class="label data-label">湿度</div>
             <div class="value-container"><span class="value" id="val-shitu">0.0</span><span class="unit">%</span></div>
             <div class="status-row">
-                <div class="circle-stage" id="stage-shitu">
+                <div class="circle-stage">
                     <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png">
                 </div>
                 <span class="status-text" id="status-shitu">-</span>
@@ -177,7 +177,7 @@
     </div>
 
     <script>
-        /* 1秒ごとに時計を更新（MM/DD hh:mm:ss） */
+        /* 時計更新 */
         function updateClock() {
             const now = new Date();
             const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -188,33 +188,23 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        /* 🎯 各リスクレベルに応じたデザインの定義設定 */
+        /* 各リスクレベルのデザイン定義 */
         const levelDesigns = {
-            "danger":    { bgColor: "#FF5050", txtColor: "#111", txt: "危　険", faceIndex: 0 },   // 1.png
-            "severe":    { bgColor: "#FFB366", txtColor: "#111", txt: "厳重警戒", faceIndex: 1 }, // 2.png
-            "warning":   { bgColor: "#FFFF80", txtColor: "#111", txt: "警　戒", faceIndex: 2 },   // 3.png
-            "attention": { bgColor: "#B3FF99", txtColor: "#111", txt: "注　意", faceIndex: 3 },   // 4.png
-            "safe":      { bgColor: "#B2F1FF", txtColor: "#111", txt: "ほぼ安全", faceIndex: 4 }    // 5.png
+            "danger":    { bgColor: "#FF5050", txtColor: "#111", txt: "危　険", faceIndex: 0 },
+            "severe":    { bgColor: "#FFB366", txtColor: "#111", txt: "厳重警戒", faceIndex: 1 },
+            "warning":   { bgColor: "#FFFF80", txtColor: "#111", txt: "警　戒", faceIndex: 2 },
+            "attention": { bgColor: "#B3FF99", txtColor: "#111", txt: "注　意", faceIndex: 3 },
+            "safe":      { bgColor: "#B2F1FF", txtColor: "#111", txt: "ほぼ安全", faceIndex: 4 }
         };
 
-        /**
-         * 🎯 本番用：システム側からデータを流し込んで画面を一発更新する関数
-         * @param {string} currentLevel - "danger", "severe", "warning", "attention", "safe" のいずれか
-         * @param {number|string} wbgt - 暑さ指数
-         * @param {number|string} kion - 気温
-         * @param {number|string} koku - 黒球温度
-         * @param {number|string} shitu - 湿度
-         */
+        /* 表示更新関数 */
         function updateSignageData(currentLevel, wbgt, kion, koku, shitu) {
             const d = levelDesigns[currentLevel] || levelDesigns["safe"];
-            
-            // 1. 数値の書き換え
             document.getElementById('val-wbgt').textContent = wbgt;
             document.getElementById('val-kion').textContent = kion;
             document.getElementById('val-koku').textContent = koku;
             document.getElementById('val-shitu').textContent = shitu;
 
-            // 2. 背景色と文字色の同期適用
             document.querySelectorAll('.data-block').forEach(b => {
                 b.style.backgroundColor = d.bgColor;
                 b.style.color = d.txtColor;
@@ -223,19 +213,33 @@
             document.querySelectorAll('.data-label').forEach(l => l.className = 'label data-label text-dark');
             document.querySelectorAll('.bottom-row').forEach(row => row.className = 'bottom-row bottom-dark');
 
-            // 3. 顔アイコンのインデックス切り替え（超高速裏読み仕様）
             document.querySelectorAll('.circle-stage').forEach(stage => {
                 const imgs = stage.querySelectorAll('img');
                 imgs.forEach(img => img.classList.remove('active'));
-                if(imgs[d.faceIndex]) {
-                    imgs[d.faceIndex].classList.add('active');
-                }
+                if(imgs[d.faceIndex]) imgs[d.faceIndex].classList.add('active');
             });
         }
 
-        // 🚀 初期表示用の呼び出し例（本番環境に合わせて初期値をセットしてください）
-        // 例: ほぼ安全状態でスタートする場合
-        updateSignageData("safe", "21.5", "23.0", "22.1", "55.0");
+        /**
+         * 🎯【新機能】URLの末尾からLoIDを取得してスクレイピング（API等）を切り替える処理
+         */
+        function initSignage() {
+            // URLの「?LoID=2451」といったパラメータを解析する
+            const urlParams = new URLSearchParams(window.location.search);
+            const loid = urlParams.get('LoID') || '2451'; // URLになければデフォルト「2451」
+
+            console.log("現在の監視対象LoID:", loid);
+
+            // 💡 運用フェーズの連携イメージ：
+            // ここで `loid` を使ってPythonで作ったAPIサーバーや、対応するJSONファイル等から
+            // リアルタイムのデータをfetch（取得）し、updateSignageData関数に流し込む形になります。
+            
+            // 例として初期値をセット
+            updateSignageData("safe", "21.5", "23.0", "22.1", "55.0");
+        }
+
+        // 起動時にURLパラメーターを確認
+        window.onload = initSignage;
     </script>
 </body>
 </html>
