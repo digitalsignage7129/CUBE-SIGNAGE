@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT実機テスト（背景色・PNG修正版）</title>
+    <title>WBGT実機テスト（横幅超固定版）</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -16,19 +16,28 @@
             display: flex; justify-content: flex-start; align-items: flex-start;
         }
 
-        /* 640x128 絶対固定サイズ */
+        /* 🎯 640x128 絶対固定（絶対に縮ませない・折り返させないガード） */
         .signage-container {
-            display: flex;
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important; /* 絶対に下段に折り返さない */
             width: 640px !important;
             height: 128px !important;
+            min-width: 640px !important;
+            max-width: 640px !important;
+            min-height: 128px !important;
+            max-height: 128px !important;
             background-color: #000000;
             overflow: hidden;
         }
 
-        /* 128px正方形ブロック */
+        /* 128px正方形ブロック（ここも突っ張る） */
         .block {
             flex: 0 0 128px !important; 
-            width: 128px !important; height: 128px !important;
+            width: 128px !important; 
+            height: 128px !important;
+            min-width: 128px !important;
+            max-width: 128px !important;
             border-right: 1px solid #1a1a1a;
             display: flex; flex-direction: column; justify-content: space-between; 
             padding: 5px 2px; text-align: center;
@@ -106,7 +115,6 @@
         }
         setInterval(updateClock, 1000);
 
-        // 💡 ご提示の画像を参考に、背景色を精密に合わせました
         const patterns = [
             { wbgt: "21.5", kion: "23.2", bgColor: "#B2F1FF", txtColor: "#111", isDark: true, txt: "ほぼ安全", img: "5.png" },
             { wbgt: "24.5", kion: "26.5", bgColor: "#B3FF99", txtColor: "#111", isDark: true, txt: "注　意", img: "4.png" },
@@ -123,8 +131,7 @@
                 b.style.color = p.txtColor;
             });
             document.querySelectorAll('.avatar-img').forEach(img => {
-                const id = img.id.split('-')[1];
-                img.src = p.img + "?t=" + new Date().getTime(); // キャッシュ回避
+                img.src = p.img + "?t=" + new Date().getTime();
             });
             document.querySelectorAll('.status-text').forEach(t => t.textContent = p.txt);
             document.querySelectorAll('.data-label').forEach(l => l.className = 'label data-label text-dark');
@@ -136,5 +143,3 @@
     </script>
 </body>
 </html>
-
-熱中症対策サイネージのデザイン案をまとめた資料が完成しました。現場での視認性と安全性を考慮した設計になっています。ぜひご覧ください。
