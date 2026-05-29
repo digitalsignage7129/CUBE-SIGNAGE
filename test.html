@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT実機テスト（画像表示修正版）</title>
+    <title>WBGT実機テスト（超高速画像切り替え版）</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -16,11 +16,11 @@
             display: flex; justify-content: flex-start; align-items: flex-start;
         }
 
-        /* 🎯 640x128 絶対固定（絶対に縮ませない・折り返させないガード） */
+        /* 640x128 絶対固定（下段折り返しガード） */
         .signage-container {
             display: flex !important;
             flex-direction: row !important;
-            flex-wrap: nowrap !important; /* 絶対に下段に折り返さない */
+            flex-wrap: nowrap !important;
             width: 640px !important;
             height: 128px !important;
             min-width: 640px !important;
@@ -31,7 +31,7 @@
             overflow: hidden;
         }
 
-        /* 128px正方形ブロック（ここも突っ張る） */
+        /* 128px正方形ブロック */
         .block {
             flex: 0 0 128px !important; 
             width: 128px !important; 
@@ -43,23 +43,41 @@
             padding: 5px 2px; text-align: center;
             background-color: #000000; color: #FFFFFF;
             font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.2s ease; /* 色変更も素早く */
         }
         .block:last-child { border-right: none; }
 
-        .label { font-size: 10px; font-weight: bold; color: #666; line-height: 1.0; }
+        .label { font-size: 10px; font-weight: bold; line-height: 1.0; }
         .text-dark { color: #111111 !important; }
 
-        /* 顔アイコン */
+        /* 顔アイコンエリア */
         .avatar-box {
             width: 100%; height: 44px;
             display: flex; align-items: center; justify-content: center;
         }
-        .circle-window {
-            width: 44px; height: 44px; border-radius: 50%;
-            overflow: hidden; display: flex; align-items: center; justify-content: center;
+        
+        /* 🎯 画像を重ね合わせるための円形ステージ（親） */
+        .circle-stage {
+            position: relative;
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            overflow: hidden;
         }
-        .avatar-img { width: 100%; height: 100%; object-fit: contain; }
+        
+        /* 🎯 5枚の画像を最初からここにすべて重ねて固定しておく設定（子） */
+        .circle-stage img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: contain;
+            opacity: 0; /* 基本は全部透明にして隠す */
+            transition: opacity 0.1s ease; /* 切り替えの瞬きのチラつきを無くす */
+        }
+        
+        /* このクラスがついた画像だけを表に浮き出させる */
+        .circle-stage img.active {
+            opacity: 1 !important;
+        }
 
         /* 数値 */
         .value-container { display: flex; align-items: baseline; justify-content: center; line-height: 1.0; }
@@ -79,30 +97,65 @@
 </head>
 <body>
     <div class="signage-container">
-        <div class="block data-block">
+        <div class="block data-block" id="block-wbgt">
             <div class="label data-label">暑さ指数</div>
-            <div class="avatar-box"><div class="circle-window"><img src="5.png" id="img-wbgt" class="avatar-img"></div></div>
+            <div class="avatar-box">
+                <div class="circle-stage">
+                    <img src="1.png" class="face-1">
+                    <img src="2.png" class="face-2">
+                    <img src="3.png" class="face-3">
+                    <img src="4.png" class="face-4">
+                    <img src="5.png" class="face-5 active"> </div>
+            </div>
             <div class="value-container"><span class="value" id="val-wbgt">21.5</span><span class="unit">℃</span></div>
-            <div class="bottom-row" id="bottom-wbgt"><span class="status-text" id="status-wbgt">ほぼ安全</span><span class="time-stamp data-time">00:00:00</span></div>
+            <div class="bottom-row"><span class="status-text" id="status-wbgt">ほぼ安全</span><span class="time-stamp data-time">00:00:00</span></div>
         </div>
-        <div class="block data-block">
+
+        <div class="block data-block" id="block-kion">
             <div class="label data-label">気温</div>
-            <div class="avatar-box"><div class="circle-window"><img src="5.png" id="img-kion" class="avatar-img"></div></div>
+            <div class="avatar-box">
+                <div class="circle-stage">
+                    <img src="1.png" class="face-1">
+                    <img src="2.png" class="face-2">
+                    <img src="3.png" class="face-3">
+                    <img src="4.png" class="face-4">
+                    <img src="5.png" class="face-5 active">
+                </div>
+            </div>
             <div class="value-container"><span class="value" id="val-kion">23.0</span><span class="unit">℃</span></div>
-            <div class="bottom-row" id="bottom-kion"><span class="status-text" id="status-kion">ほぼ安全</span><span class="time-stamp data-time">00:00:00</span></div>
+            <div class="bottom-row"><span class="status-text" id="status-kion">ほぼ安全</span><span class="time-stamp data-time">00:00:00</span></div>
         </div>
-        <div class="block data-block">
+
+        <div class="block data-block" id="block-koku">
             <div class="label data-label">黒球温度</div>
-            <div class="avatar-box"><div class="circle-window"><img src="5.png" id="img-koku" class="avatar-img"></div></div>
+            <div class="avatar-box">
+                <div class="circle-stage">
+                    <img src="1.png" class="face-1">
+                    <img src="2.png" class="face-2">
+                    <img src="3.png" class="face-3">
+                    <img src="4.png" class="face-4">
+                    <img src="5.png" class="face-5 active">
+                </div>
+            </div>
             <div class="value-container"><span class="value" id="val-koku">22.1</span><span class="unit">℃</span></div>
-            <div class="bottom-row" id="bottom-koku"><span class="status-text" id="status-koku">ほぼ安全</span><span class="time-stamp data-time">00:00:00</span></div>
+            <div class="bottom-row"><span class="status-text" id="status-koku">ほぼ安全</span><span class="time-stamp data-time">00:00:00</span></div>
         </div>
-        <div class="block data-block">
+
+        <div class="block data-block" id="block-shitu">
             <div class="label data-label">湿度</div>
-            <div class="avatar-box"><div class="circle-window"><img src="5.png" id="img-shitu" class="avatar-img"></div></div>
+            <div class="avatar-box">
+                <div class="circle-stage">
+                    <img src="1.png" class="face-1">
+                    <img src="2.png" class="face-2">
+                    <img src="3.png" class="face-3">
+                    <img src="4.png" class="face-4">
+                    <img src="5.png" class="face-5 active">
+                </div>
+            </div>
             <div class="value-container"><span class="value" id="val-shitu">55.0</span><span class="unit">%</span></div>
-            <div class="bottom-row" id="bottom-shitu"><span class="status-text" id="status-shitu">ほぼ安全</span><span class="time-stamp data-time">00:00:00</span></div>
+            <div class="bottom-row"><span class="status-text" id="status-shitu">ほぼ安全</span><span class="time-stamp data-time">00:00:00</span></div>
         </div>
+
         <div class="block" style="background:#000; padding:0; display:flex; align-items:center; justify-content:center;">
             <img src="logo.png" style="width:100%; height:100%; object-fit:contain;">
         </div>
@@ -117,6 +170,43 @@
         setInterval(updateClock, 1000);
 
         const patterns = [
-            { wbgt: "21.5", kion: "23.2", bgColor: "#B2F1FF", txtColor: "#111", isDark: true, txt: "ほぼ安全", img: "5.png" },
-            { wbgt: "24.5", kion: "26.5", bgColor: "#B3FF99", txtColor: "#111", isDark: true, txt: "注　意", img: "4.png" },
-            { wbgt: "27.8", kion: "29.1", bgColor: "#FFFF80", txtColor: "#111", isDark: true, txt: "警なおりましたね
+            { wbgt: "21.5", kion: "23.2", bgColor: "#B2F1FF", txtColor: "#111", txt: "ほぼ安全", faceClass: ".face-5" },
+            { wbgt: "24.5", kion: "26.5", bgColor: "#B3FF99", txtColor: "#111", txt: "注　意", faceClass: ".face-4" },
+            { wbgt: "27.8", kion: "29.1", bgColor: "#FFFF80", txtColor: "#111", txt: "警　戒", faceClass: ".face-3" },
+            { wbgt: "30.5", kion: "32.0", bgColor: "#FFB366", txtColor: "#111", txt: "厳重警戒", faceClass: ".face-2" },
+            { wbgt: "33.1", kion: "35.4", bgColor: "#FF5050", txtColor: "#111", txt: "危　険", faceClass: ".face-1" }
+        ];
+
+        let step = 0;
+        function loop() {
+            const p = patterns[step];
+            
+            // データの更新
+            document.getElementById('val-wbgt').textContent = p.wbgt;
+            document.getElementById('val-kion').textContent = p.kion;
+
+            // 全ブロックの色・文字更新
+            document.querySelectorAll('.data-block').forEach(b => {
+                b.style.backgroundColor = p.bgColor;
+                b.style.color = p.txtColor;
+            });
+            document.querySelectorAll('.status-text').forEach(t => t.textContent = p.txt);
+            document.querySelectorAll('.data-label').forEach(l => l.className = 'label data-label text-dark');
+            document.querySelectorAll('.bottom-row').forEach(row => row.className = 'bottom-row bottom-dark');
+
+            // 🎯 画像の切り替え処理（src変更ではなく、表示・非表示のクラスを入れ替えるだけ）
+            document.querySelectorAll('.circle-stage').forEach(stage => {
+                // まず今見えている画像を非表示にする
+                stage.querySelectorAll('img').forEach(img => img.classList.remove('active'));
+                // 指定のリスクレベルの画像だけをパッと表示させる（裏読み済みなので一瞬で変わる）
+                stage.querySelector(p.faceClass).classList.add('active');
+            });
+
+            // テスト用ループ（5秒。切り替えをさらに早くしたい場合はここを「2000」等に変更してください）
+            step = (step + 1) % patterns.length;
+        }
+        setInterval(loop, 5000);
+        loop();
+    </script>
+</body>
+</html>
