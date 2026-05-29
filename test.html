@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGTループテスト（一覧画像連動版）</title>
+    <title>WBGTループテスト（完全座標修正版）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -77,20 +77,19 @@
             margin-top: 1px;
         }
         
-        /* 💡 ゲットした「ダウンロード.png」から顔の黒丸部分だけを正確に型抜きするクリップ窓 */
+        /* 🎯 修正版クリップ窓
+           横幅 916px の大元画像を 388px にリサイズすることで、
+           直径 104px の黒丸をぴったり「44px」の窓サイズに縮小させています。 */
         .face-sprite {
             width: 44px;
             height: 44px;
-            border-radius: 50%; /* 綺麗な正円にする */
-            background-image: url('ダウンロード.png'); /* 保存した画像を読み込む */
+            border-radius: 50%; /* 綺麗な正円 */
+            background-image: url('ダウンロード.png');
             background-repeat: no-repeat;
-            /* 縦長の大きな画像から、顔のパーツがある部分だけを虫眼鏡で覗くように拡大縮小（リサイズ）
-               元画像の横幅（約700px強）から、顔の黒丸のサイズ（約64px相当）を44pxの窓に合わせる計算
-            */
-            background-size: 470px auto; 
-            background-position: -58px -10px; /* ここをJavaScriptで縦にズラします */
+            background-size: 388px auto; 
+            /* X軸は -76px で顔の中心線に固定。Y軸はJSでカチッと切り替えます */
+            background-position: -76px 0px; 
             transition: background-position 0.4s ease;
-            box-shadow: 0 0 4px rgba(0,0,0,0.3);
         }
 
         /* 数値表示 */
@@ -224,7 +223,6 @@
     </div>
 
     <script>
-        // 時計更新
         function updateClock() {
             const now = new Date();
             const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
@@ -233,15 +231,14 @@
         updateClock();
         setInterval(updateClock, 1000);
 
-        /* 💡 画像内の各キャラクターの「y軸（縦方向）の座標」をピクセル単位で計算しました。
-           画像の一番下が「ほぼ安全（10px）」、一番上が「危険（-248px）」になるようにスライドさせます。
-        */
+        /* 💡 1px の狂いもない完全精密座標（縮小率換算済み）
+           上から「ほぼ安全」「注意」「警戒」「厳重警戒」「危険」の順でループします */
         const testPatterns = [
-            { wbgt: "21.5", kion: "23.2", koku: "22.0", shitu: "55.0", bgColor: "#A2C4D2", textColor: "#111111", isDark: true,  txt: "ほぼ安全", bgPos: "-58px -248px", label: "text-dark" }, // 一番下の顔
-            { wbgt: "24.5", kion: "26.5", koku: "25.1", shitu: "60.0", bgColor: "#BCE49B", textColor: "#111111", isDark: true,  txt: "注　意", bgPos: "-58px -189px", label: "text-dark" },
-            { wbgt: "27.8", kion: "29.1", koku: "28.5", shitu: "65.0", bgColor: "#B7732D", textColor: "#FFFFFF", isDark: false, txt: "警　戒", bgPos: "-58px -129px", label: "text-light" },
-            { wbgt: "30.5", kion: "32.0", koku: "31.4", shitu: "70.0", bgColor: "#7C3E1E", textColor: "#FFFFFF", isDark: false, txt: "厳重警戒", bgPos: "-58px -70px", label: "text-light" },
-            { wbgt: "33.1", kion: "35.4", koku: "34.8", shitu: "75.0", bgColor: "#A63A3A", textColor: "#FFFFFF", isDark: false, txt: "危　険", bgPos: "-58px -10px", label: "text-light" } // 一番上の顔
+            { wbgt: "21.5", kion: "23.2", koku: "22.0", shitu: "55.0", bgColor: "#A2C4D2", textColor: "#111111", isDark: true,  txt: "ほぼ安全", bgPos: "-76px -228px", label: "text-dark" },
+            { wbgt: "24.5", kion: "26.5", koku: "25.1", shitu: "60.0", bgColor: "#BCE49B", textColor: "#111111", isDark: true,  txt: "注　意", bgPos: "-76px -177px", label: "text-dark" },
+            { wbgt: "27.8", kion: "29.1", koku: "28.5", shitu: "65.0", bgColor: "#B7732D", textColor: "#FFFFFF", isDark: false, txt: "警　戒", bgPos: "-76px -125px", label: "text-light" },
+            { wbgt: "30.5", kion: "32.0", koku: "31.4", shitu: "70.0", bgColor: "#7C3E1E", textColor: "#FFFFFF", isDark: false, txt: "厳重警戒", bgPos: "-76px -73px",  label: "text-light" },
+            { wbgt: "33.1", kion: "35.4", koku: "34.8", shitu: "75.0", bgColor: "#A63A3A", textColor: "#FFFFFF", isDark: false, txt: "危　険", bgPos: "-76px -22px",  label: "text-light" }
         ];
 
         let currentStep = 0;
@@ -249,36 +246,30 @@
         function simulateNextPattern() {
             const p = testPatterns[currentStep];
 
-            // 数値更新
             document.getElementById('val-wbgt').textContent = p.wbgt;
             document.getElementById('val-kion').textContent = p.kion;
             document.getElementById('val-koku').textContent = p.koku;
             document.getElementById('val-shitu').textContent = p.shitu;
 
-            // 5枚の画像位置を一斉にズラす
             const imgIds = ['img-wbgt', 'img-kion', 'img-koku', 'img-shitu'];
             imgIds.forEach(id => {
                 document.getElementById(id).style.backgroundPosition = p.bgPos;
             });
 
-            // 文言更新
             document.getElementById('status-wbgt').textContent = p.txt;
             document.getElementById('status-kion').textContent = p.txt;
             document.getElementById('status-koku').textContent = p.txt;
             document.getElementById('status-shitu').textContent = p.txt;
 
-            // 背景色と文字色
             document.querySelectorAll('.data-block').forEach(b => {
                 b.style.backgroundColor = p.bgColor;
                 b.style.color = p.textColor;
             });
 
-            // ラベル文字色
             document.querySelectorAll('.data-label').forEach(l => {
                 l.className = 'label data-label ' + p.label;
             });
 
-            // 下段エリアの明暗調整
             document.querySelectorAll('.bottom-row').forEach(row => {
                 if (p.isDark) {
                     row.classList.add('bottom-dark');
@@ -290,11 +281,9 @@
                 t.className = 'time-stamp data-time ' + (p.isDark ? 'time-dark' : 'time-light');
             });
 
-            // 5秒ごとに次のレベルへ
             currentStep = (currentStep + 1) % testPatterns.length;
         }
 
-        // 初回実行とループセット
         simulateNextPattern();
         setInterval(simulateNextPattern, 5000);
     </script>
