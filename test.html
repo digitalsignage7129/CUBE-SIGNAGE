@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT実機テスト（横幅超固定版）</title>
+    <title>WBGT実機テスト（画像表示修正版）</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -45,6 +45,7 @@
             font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
             transition: background-color 0.3s ease;
         }
+        .block:last-child { border-right: none; }
 
         .label { font-size: 10px; font-weight: bold; color: #666; line-height: 1.0; }
         .text-dark { color: #111111 !important; }
@@ -118,28 +119,4 @@
         const patterns = [
             { wbgt: "21.5", kion: "23.2", bgColor: "#B2F1FF", txtColor: "#111", isDark: true, txt: "ほぼ安全", img: "5.png" },
             { wbgt: "24.5", kion: "26.5", bgColor: "#B3FF99", txtColor: "#111", isDark: true, txt: "注　意", img: "4.png" },
-            { wbgt: "27.8", kion: "29.1", bgColor: "#FFFF80", txtColor: "#111", isDark: true, txt: "警　戒", img: "3.png" },
-            { wbgt: "30.5", kion: "32.0", bgColor: "#FFB366", txtColor: "#111", isDark: true, txt: "厳重警戒", img: "2.png" },
-            { wbgt: "33.1", kion: "35.4", bgColor: "#FF5050", txtColor: "#111", isDark: true, txt: "危　険", img: "1.png" }
-        ];
-
-        let step = 0;
-        function loop() {
-            const p = patterns[step];
-            document.querySelectorAll('.data-block').forEach(b => {
-                b.style.backgroundColor = p.bgColor;
-                b.style.color = p.txtColor;
-            });
-            document.querySelectorAll('.avatar-img').forEach(img => {
-                img.src = p.img + "?t=" + new Date().getTime();
-            });
-            document.querySelectorAll('.status-text').forEach(t => t.textContent = p.txt);
-            document.querySelectorAll('.data-label').forEach(l => l.className = 'label data-label text-dark');
-            document.querySelectorAll('.bottom-row').forEach(row => row.className = 'bottom-row bottom-dark');
-            step = (step + 1) % patterns.length;
-        }
-        setInterval(loop, 5000);
-        loop();
-    </script>
-</body>
-</html>
+            { wbgt: "27.8", kion: "29.1", bgColor: "#FFFF80", txtColor: "#111", isDark: true, txt: "警なおりましたね
