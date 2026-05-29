@@ -6,9 +6,8 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGTループテスト（実機フル画面版）</title>
+    <title>WBGTループテスト（色合い修正版）</title>
     <style>
-        /* 画面全体を真っ黒にして余白をゼロに */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -24,7 +23,7 @@
             align-items: flex-start;
         }
 
-        /* 640x128 絶対固定サイズ（本番と全く同じ環境） */
+        /* 640x128 絶対固定サイズ */
         .signage-container {
             display: flex;
             width: 640px !important;
@@ -82,11 +81,6 @@
             height: 100%;
             width: auto;
             object-fit: contain;
-            border-radius: 50%;
-            filter: brightness(1.65); /* 暗いPNG画像の明るさ自動補正 */
-        }
-        .no-filter {
-            filter: none !important;
         }
 
         /* 数値表示 */
@@ -220,7 +214,6 @@
     </div>
 
     <script>
-        // 時計を1秒ずつ進める処理
         function updateClock() {
             const now = new Date();
             const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
@@ -229,13 +222,13 @@
         updateClock();
         setInterval(updateClock, 1000);
 
-        // 5段階のテストデータパターン
+        // 💡 ご指摘の通り色合いを優しいトーン（薄水色、薄緑）へ微調整
         const testPatterns = [
-            { wbgt: "21.5", kion: "23.2", koku: "22.0", shitu: "55.0", bgColor: "#4D666D", textColor: "#FFFFFF", isDark: false, txt: "ほぼ安全", img: "5.png", filter: true, label: "text-light" },
-            { wbgt: "24.5", kion: "26.5", koku: "25.1", shitu: "60.0", bgColor: "#C4F941", textColor: "#111111", isDark: true,  txt: "注　意", img: "4.png", filter: false, label: "text-dark" },
-            { wbgt: "27.8", kion: "29.1", koku: "28.5", shitu: "65.0", bgColor: "#B7732D", textColor: "#FFFFFF", isDark: false, txt: "警　戒", img: "3.png", filter: true, label: "text-light" },
-            { wbgt: "30.5", kion: "32.0", koku: "31.4", shitu: "70.0", bgColor: "#7C3E1E", textColor: "#FFFFFF", isDark: false, txt: "厳重警戒", img: "2.png", filter: true, label: "text-light" },
-            { wbgt: "33.1", kion: "35.4", koku: "34.8", shitu: "75.0", bgColor: "#A63A3A", textColor: "#FFFFFF", isDark: false, txt: "危　険", img: "1.png", filter: true, label: "text-light" }
+            { wbgt: "21.5", kion: "23.2", koku: "22.0", shitu: "55.0", bgColor: "#A2C4D2", textColor: "#111111", isDark: true,  txt: "ほぼ安全", img: "5.png", label: "text-dark" }, // 優しい薄水色
+            { wbgt: "24.5", kion: "26.5", koku: "25.1", shitu: "60.0", bgColor: "#BCE49B", textColor: "#111111", isDark: true,  txt: "注　意", img: "4.png", label: "text-dark" }, // 優しい薄緑
+            { wbgt: "27.8", kion: "29.1", koku: "28.5", shitu: "65.0", bgColor: "#B7732D", textColor: "#FFFFFF", isDark: false, txt: "警　戒", img: "3.png", label: "text-light" },
+            { wbgt: "30.5", kion: "32.0", koku: "31.4", shitu: "70.0", bgColor: "#7C3E1E", textColor: "#FFFFFF", isDark: false, txt: "厳重警戒", img: "2.png", label: "text-light" },
+            { wbgt: "33.1", kion: "35.4", koku: "34.8", shitu: "75.0", bgColor: "#A63A3A", textColor: "#FFFFFF", isDark: false, txt: "危　険", img: "1.png", label: "text-light" }
         ];
 
         let currentStep = 0;
@@ -243,42 +236,30 @@
         function simulateNextPattern() {
             const p = testPatterns[currentStep];
 
-            // 数値のダミー更新
             document.getElementById('val-wbgt').textContent = p.wbgt;
             document.getElementById('val-kion').textContent = p.kion;
             document.getElementById('val-koku').textContent = p.koku;
             document.getElementById('val-shitu').textContent = p.shitu;
 
-            // 顔画像の差し替えと明るさ補正
             const imgIds = ['img-wbgt', 'img-kion', 'img-koku', 'img-shitu'];
             imgIds.forEach(id => {
-                const imgEl = document.getElementById(id);
-                imgEl.src = p.img;
-                if (p.filter) {
-                    imgEl.classList.remove('no-filter');
-                } else {
-                    imgEl.classList.add('no-filter');
-                }
+                document.getElementById(id).src = p.img;
             });
 
-            // ステータス文言
             document.getElementById('status-wbgt').textContent = p.txt;
             document.getElementById('status-kion').textContent = p.txt;
             document.getElementById('status-koku').textContent = p.txt;
             document.getElementById('status-shitu').textContent = p.txt;
 
-            // 背景色と文字色の適用
             document.querySelectorAll('.data-block').forEach(b => {
                 b.style.backgroundColor = p.bgColor;
                 b.style.color = p.textColor;
             });
 
-            // ラベル色のクラス変更
             document.querySelectorAll('.data-label').forEach(l => {
                 l.className = 'label data-label ' + p.label;
             });
 
-            // 下段時計エリアの明暗調整
             document.querySelectorAll('.bottom-row').forEach(row => {
                 if (p.isDark) {
                     row.classList.add('bottom-dark');
@@ -290,11 +271,9 @@
                 t.className = 'time-stamp data-time ' + (p.isDark ? 'time-dark' : 'time-light');
             });
 
-            // 次のステップへ（最後まで行ったら0に戻る）
             currentStep = (currentStep + 1) % testPatterns.length;
         }
 
-        // 起動時に1回実行し、以降5秒ごとにループ
         simulateNextPattern();
         setInterval(simulateNextPattern, 5000);
     </script>
