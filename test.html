@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT実機テスト（完全同期修正版）</title>
+    <title>WBGT実機テスト（配置最適化版）</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -31,7 +31,7 @@
             overflow: hidden;
         }
 
-        /* 128px正方形ブロック */
+        /* 128px正方形ブロック（縦の配置を上からきれいに等間隔分配） */
         .block {
             flex: 0 0 128px !important; 
             width: 128px !important; 
@@ -39,124 +39,137 @@
             min-width: 128px !important;
             max-width: 128px !important;
             border-right: 1px solid #1a1a1a;
-            display: flex; flex-direction: column; justify-content: space-between; 
-            padding: 5px 2px; text-align: center;
-            color: #FFFFFF;
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; /* 上から下まで美しく等間隔配置 */
+            padding: 4px 2px 2px 2px; /* 上下の余白を微調整 */
+            text-align: center;
             font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
-            /* 🎯 初期背景色を透明に指定し、JS側の色指定（background)を邪魔しないように修正 */
             background-color: transparent; 
             transition: background-color 0.2s ease;
         }
         .block:last-child { border-right: none; }
 
+        /* [1段目] 項目名（視認性を保ちつつ微小化） */
         .label { font-size: 10px; font-weight: bold; line-height: 1.0; }
         .text-dark { color: #111111 !important; }
 
-        /* 顔アイコンエリア */
-        .avatar-box {
-            width: 100%; height: 44px;
-            display: flex; align-items: center; justify-content: center;
+        /* [2段目] 数値（一番大きく強調、ハみ出し防止のためline-heightを極小に） */
+        .value-container { 
+            display: flex; 
+            align-items: baseline; 
+            justify-content: center; 
+            line-height: 0.8; 
+            margin: -2px 0 -4px 0; /* 上下の隙間を詰めて高さを稼ぐ */
         }
-        
-        /* 画像を重ね合わせるための円形ステージ（親） */
+        .value { font-size: 34px; font-family: 'Arial Black', sans-serif; font-weight: bold; }
+        .unit { font-size: 12px; margin-left: 1px; font-weight: bold; }
+
+        /* [3段目] 顔文字 ＋ 安全などの文字が入る横並びエリア */
+        .status-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px; /* 顔と文字の隙間 */
+            height: 38px; /* この段の高さをしっかり固定 */
+            width: 100%;
+        }
+
+        /* 顔アイコン（裏読みステージ） */
         .circle-stage {
             position: relative;
-            width: 44px; height: 44px;
+            width: 36px; height: 36px; /* 縦並び用に少しだけコンパクト（36px）にして安定化 */
             border-radius: 50%;
             overflow: hidden;
+            flex-shrink: 0;
         }
-        
-        /* 5枚の画像を最初からここにすべて重ねて固定しておく設定（子） */
         .circle-stage img {
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
             object-fit: contain;
-            opacity: 0; /* 基本は全部透明にして隠す */
-            transition: opacity 0.1s ease; /* 切り替えのチラつきを無くす */
+            opacity: 0;
+            transition: opacity 0.1s ease;
         }
-        
-        /* このクラスがついた画像だけを表に浮き出させる */
-        .circle-stage img.active {
-            opacity: 1 !important;
+        .circle-stage img.active { opacity: 1 !important; }
+
+        /* 状態の文字（安全など） */
+        .status-text { 
+            font-size: 13px; /* 少し大きめにしてハッキリと */
+            font-weight: 900; 
+            line-height: 1.0;
+            white-space: nowrap;
         }
 
-        /* 数値 */
-        .value-container { display: flex; align-items: baseline; justify-content: center; line-height: 1.0; }
-        .value { font-size: 32px; font-family: 'Arial Black', sans-serif; font-weight: bold; line-height: 1.0; }
-        .unit { font-size: 12px; margin-left: 1px; }
-
-        /* 下段エリア */
+        /* [4段目] 日付 ＋ 時間（最下部の帯エリア） */
         .bottom-row {
-            display: flex; justify-content: space-between; align-items: center;
-            width: 96%; margin: 0 auto; background-color: rgba(0, 0, 0, 0.4);
-            padding: 1px 4px; border-radius: 2px; height: 18px;
+            display: flex; 
+            justify-content: center; /* センター寄せに変更 */
+            align-items: center;
+            width: 96%; 
+            margin: 0 auto; 
+            background-color: rgba(0, 0, 0, 0.4);
+            border-radius: 2px; 
+            height: 16px;
         }
         .bottom-dark { background-color: rgba(255, 255, 255, 0.4) !important; }
-        .status-text { font-size: 11px; font-weight: 900; line-height: 1.0; }
-        .time-stamp { font-size: 9px; font-family: monospace; line-height: 1.0; }
+        /* 日付と時刻のフォントサイズと間隔 */
+        .time-stamp { 
+            font-size: 9px; 
+            font-family: monospace; 
+            line-height: 1.0; 
+            letter-spacing: 0.5px;
+        }
     </style>
 </head>
 <body>
     <div class="signage-container">
         <div class="block data-block">
             <div class="label data-label">暑さ指数</div>
-            <div class="avatar-box">
-                <div class="circle-stage">
-                    <img src="1.png" class="face-1">
-                    <img src="2.png" class="face-2">
-                    <img src="3.png" class="face-3">
-                    <img src="4.png" class="face-4">
-                    <img src="5.png" class="face-5 active">
-                </div>
-            </div>
             <div class="value-container"><span class="value" id="val-wbgt">21.5</span><span class="unit">℃</span></div>
-            <div class="bottom-row"><span class="status-text" id="status-wbgt">ほぼ安全</span><span class="time-stamp data-time">00:00:00</span></div>
+            <div class="status-row">
+                <div class="circle-stage">
+                    <img src="1.png" class="face-1"><img src="2.png" class="face-2"><img src="3.png" class="face-3"><img src="4.png" class="face-4"><img src="5.png" class="face-5 active">
+                </div>
+                <span class="status-text">ほぼ安全</span>
+            </div>
+            <div class="bottom-row"><span class="time-stamp data-time">05/29 00:00:00</span></div>
         </div>
 
         <div class="block data-block">
             <div class="label data-label">気温</div>
-            <div class="avatar-box">
-                <div class="circle-stage">
-                    <img src="1.png" class="face-1">
-                    <img src="2.png" class="face-2">
-                    <img src="3.png" class="face-3">
-                    <img src="4.png" class="face-4">
-                    <img src="5.png" class="face-5 active">
-                </div>
-            </div>
             <div class="value-container"><span class="value" id="val-kion">23.0</span><span class="unit">℃</span></div>
-            <div class="bottom-row"><span class="status-text" id="status-kion">ほぼ安全</span><span class="time-stamp data-time">00:00:00</span></div>
+            <div class="status-row">
+                <div class="circle-stage">
+                    <img src="1.png" class="face-1"><img src="2.png" class="face-2"><img src="3.png" class="face-3"><img src="4.png" class="face-4"><img src="5.png" class="face-5 active">
+                </div>
+                <span class="status-text">ほぼ安全</span>
+            </div>
+            <div class="bottom-row"><span class="time-stamp data-time">05/29 00:00:00</span></div>
         </div>
 
         <div class="block data-block">
             <div class="label data-label">黒球温度</div>
-            <div class="avatar-box">
-                <div class="circle-stage">
-                    <img src="1.png" class="face-1">
-                    <img src="2.png" class="face-2">
-                    <img src="3.png" class="face-3">
-                    <img src="4.png" class="face-4">
-                    <img src="5.png" class="face-5 active">
-                </div>
-            </div>
             <div class="value-container"><span class="value" id="val-koku">22.1</span><span class="unit">℃</span></div>
-            <div class="bottom-row"><span class="status-text" id="status-koku">ほぼ安全</span><span class="time-stamp data-time">00:00:00</span></div>
+            <div class="status-row">
+                <div class="circle-stage">
+                    <img src="1.png" class="face-1"><img src="2.png" class="face-2"><img src="3.png" class="face-3"><img src="4.png" class="face-4"><img src="5.png" class="face-5 active">
+                </div>
+                <span class="status-text">ほぼ安全</span>
+            </div>
+            <div class="bottom-row"><span class="time-stamp data-time">05/29 00:00:00</span></div>
         </div>
 
         <div class="block data-block">
             <div class="label data-label">湿度</div>
-            <div class="avatar-box">
-                <div class="circle-stage">
-                    <img src="1.png" class="face-1">
-                    <img src="2.png" class="face-2">
-                    <img src="3.png" class="face-3">
-                    <img src="4.png" class="face-4">
-                    <img src="5.png" class="face-5 active">
-                </div>
-            </div>
             <div class="value-container"><span class="value" id="val-shitu">55.0</span><span class="unit">%</span></div>
-            <div class="bottom-row"><span class="status-text" id="status-shitu">ほぼ安全</span><span class="time-stamp data-time">00:00:00</span></div>
+            <div class="status-row">
+                <div class="circle-stage">
+                    <img src="1.png" class="face-1"><img src="2.png" class="face-2"><img src="3.png" class="face-3"><img src="4.png" class="face-4"><img src="5.png" class="face-5 active">
+                </div>
+                <span class="status-text">ほぼ安全</span>
+            </div>
+            <div class="bottom-row"><span class="time-stamp data-time">05/29 00:00:00</span></div>
         </div>
 
         <div class="block" style="background:#000; padding:0; display:flex; align-items:center; justify-content:center;">
@@ -165,14 +178,16 @@
     </div>
 
     <script>
+        /* 時計更新（日付 MM/DD も一緒に出力するように改良） */
         function updateClock() {
             const now = new Date();
-            const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const date = String(now.getDate()).padStart(2, '0');
+            const timeString = `${month}/${date} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
             document.querySelectorAll('.data-time').forEach(el => el.textContent = timeString);
         }
         setInterval(updateClock, 1000);
 
-        /* 🎯 全データが綺麗に連動して変わるパターンデータ（実機色対応） */
         const patterns = [
             { wbgt: "21.5", kion: "23.2", koku: "22.0", shitu: "55.0", bgColor: "#B2F1FF", txtColor: "#111", txt: "ほぼ安全", faceClass: ".face-5" },
             { wbgt: "24.5", kion: "26.5", koku: "25.1", shitu: "60.0", bgColor: "#B3FF99", txtColor: "#111", txt: "注　意", faceClass: ".face-4" },
@@ -185,13 +200,11 @@
         function loop() {
             const p = patterns[step];
             
-            // 🎯 4つの数値データをすべて正しく書き換え
             document.getElementById('val-wbgt').textContent = p.wbgt;
             document.getElementById('val-kion').textContent = p.kion;
             document.getElementById('val-koku').textContent = p.koku;
             document.getElementById('val-shitu').textContent = p.shitu;
 
-            // 全データブロックの背景色・文字色・ラベル色を同期
             document.querySelectorAll('.data-block').forEach(b => {
                 b.style.backgroundColor = p.bgColor;
                 b.style.color = p.txtColor;
@@ -200,7 +213,6 @@
             document.querySelectorAll('.data-label').forEach(l => l.className = 'label data-label text-dark');
             document.querySelectorAll('.bottom-row').forEach(row => row.className = 'bottom-row bottom-dark');
 
-            // 🎯 画像の超高速切り替え（重ねた画像の透明度変更）
             document.querySelectorAll('.circle-stage').forEach(stage => {
                 stage.querySelectorAll('img').forEach(img => img.classList.remove('active'));
                 stage.querySelector(p.faceClass).classList.add('active');
@@ -209,7 +221,6 @@
             step = (step + 1) % patterns.length;
         }
         
-        // 切り替え間隔（テスト用に5秒にしています。お好みで「2000(2秒)」等に変更してください）
         setInterval(loop, 5000);
         loop();
     </script>
