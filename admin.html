@@ -5,54 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WBGTサイネージ 設定・管理画面</title>
     <style>
-        body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            background-color: #f4f6f9;
-            color: #333;
-            padding: 40px 20px;
-            margin: 0;
-        }
-        .admin-card {
-            max-width: 500px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
+        body { font-family: Arial, sans-serif; background-color: #f4f6f9; padding: 40px 20px; margin: 0; }
+        .admin-card { max-width: 500px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         h2 { text-align: center; color: #111; margin-bottom: 25px; font-size: 22px; }
         .form-group { margin-bottom: 20px; }
         label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 14px; }
-        input[type="text"], input[type="file"] {
-            width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px;
-        }
-        button {
-            width: 100%; padding: 12px; background: #007bff; color: #fff; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s;
-        }
+        input[type="text"], input[type="file"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 12px; background: #007bff; color: #fff; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; }
         button:hover { background: #0056b3; }
-        
-        /* 結果表示エリア（初期は隠す） */
-        .result-box {
-            display: none;
-            margin-top: 30px;
-            padding-top: 25px;
-            border-top: 2px dashed #ddd;
-        }
+        .result-box { display: none; margin-top: 30px; padding-top: 25px; border-top: 2px dashed #ddd; }
         .result-title { font-weight: bold; color: #28a745; text-align: center; margin-bottom: 15px; }
-        .nav-btn {
-            display: block; text-align: center; padding: 12px; margin-bottom: 10px; border-radius: 4px; font-weight: bold; text-decoration: none; font-size: 14px;
-        }
+        .nav-btn { display: block; text-align: center; padding: 12px; margin-bottom: 10px; border-radius: 4px; font-weight: bold; text-decoration: none; font-size: 14px; }
         .btn-primary { background-color: #28a745; color: white; }
-        .btn-primary:hover { background-color: #218838; }
-        .btn-secondary { background-color: #6c757d; color: white; }
-        .btn-secondary:hover { background-color: #5a6268; }
-        .url-text { background: #eee; padding: 8px; font-size: 11px; border-radius: 4px; word-break: break-all; font-family: monospace; margin-bottom: 15px; }
+        .url-text { background: #eee; padding: 8px; font-size: 11px; border-radius: 4px; word-break: break-all; font-family: monospace; margin-bottom: 15px; max-height: 60px; overflow-y: auto; }
     </style>
 </head>
 <body>
 
 <div class="admin-card">
-    <h2>📊 現場サイネージ 新規登録・変更</h2>
+    <h2>📊 現場サイネージ 新規登録・URL発行</h2>
     
     <div id="form-area">
         <div class="form-group">
@@ -66,59 +37,55 @@
         </div>
         
         <div class="form-group">
-            <label for="logoFile">③ 表示するロゴ画像</label>
-            <input type="text" id="logoUrl" placeholder="例: logo_b-sha.png (サーバー上の画像名)">
+            <label for="logoFile">③ 表示するロゴ画像を選択（JPG / PNG）</label>
+            <!-- 🎯 文字入力ではなく、本物のファイル選択に変更 -->
+            <input type="file" id="logoFile" accept="image/*">
         </div>
         
         <button type="button" onclick="generateUrls()">設定を確定してURLを発行する</button>
     </div>
 
+    <!-- 結果出力エリア -->
     <div id="result-area" class="result-box">
-        <div class="result-title">✨ 設定に沿ったURLの発行が完了しました！</div>
+        <div class="result-title">✨ URLの発行が完了しました！</div>
         
-        <label>🖥️ サイネージ表示用URL</label>
+        <label>🖥️ サイネージ登録用URL（これをコピーしてサイネージ端末へ）</label>
         <div class="url-text" id="display-url-text"></div>
-        <a href="#" id="btn-signage" class="nav-btn btn-primary" target="_blank">このままサイネージ表示ページを開く</a>
-        
-        <label style="margin-top: 15px;">🛠️ この現場の再編集・ロゴ変更用URL</label>
-        <div class="url-text" id="admin-url-text"></div>
-        <a href="#" id="btn-admin" class="nav-btn btn-secondary">この現場の編集ページ（登録情報保持）</a>
+        <a href="#" id="btn-signage" class="nav-btn btn-primary" target="_blank">このまま画面表示を確認する</a>
     </div>
 </div>
 
 <script>
+    let uploadedLogoData = 'logo.png'; // デフォルト値
+
+    // 画像が選択されたら、自動的に「長い文字列（Base64）」に変換して記憶する処理
+    document.getElementById('logoFile').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            uploadedLogoData = event.target.result; // 画像をテキスト化したもの
+        };
+        reader.readAsDataURL(file);
+    });
+
     function generateUrls() {
         const corpId = document.getElementById('corpId').value.trim() || '00574';
         const loId = document.getElementById('loId').value.trim() || '2451';
-        const logoUrl = document.getElementById('logoUrl').value.trim() || 'logo.png';
 
-        // 現在のドメインやフォルダパスを自動取得して規則性のあるURLを生成
+        // 共通のベースパスを取得
         const basePath = window.location.href.split('?')[0].replace('admin.html', '');
         
-        // 規則性に基づいた「サイネージ表示用URL」と「管理用URL」を合体生成
-        const signageUrl = `${basePath}index.html?CorpID=${corpId}&LoID=${loId}&Logo=${logoUrl}`;
-        const adminEditUrl = `${basePath}admin.html?CorpID=${corpId}&LoID=${loId}&Logo=${logoUrl}`;
+        // 画像データを含んだ規則性のあるURLを完成させる（エンコードして安全なURLに変換）
+        const signageUrl = `${basePath}index.html?CorpID=${corpId}&LoID=${loId}&Logo=${encodeURIComponent(uploadedLogoData)}`;
 
-        // 画面にテキストとボタンリンクを反映
+        // 画面に反映
         document.getElementById('display-url-text').textContent = signageUrl;
         document.getElementById('btn-signage').href = signageUrl;
 
-        document.getElementById('admin-url-text').textContent = adminEditUrl;
-        document.getElementById('btn-admin').href = adminEditUrl;
-
-        // 結果エリアをパッと表示
+        // 結果を表示
         document.getElementById('result-area').style.display = 'block';
-    }
-
-    // もしURLにすでに情報が含まれていたら（編集ページとして開かれたら）、最初からフォームを埋めておく親切機能
-    window.onload = function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        if(urlParams.has('CorpID') || urlParams.has('LoID')) {
-            document.getElementById('corpId').value = urlParams.get('CorpID') || '';
-            document.getElementById('loId').value = urlParams.get('LoID') || '';
-            document.getElementById('logoUrl').value = urlParams.get('Logo') || '';
-            generateUrls(); // すでにデータがあれば自動でURLも発行状態にする
-        }
     }
 </script>
 
