@@ -16,7 +16,7 @@
             display: flex; justify-content: flex-start; align-items: flex-start;
         }
 
-        /* 🎯 640x128 絶対固定（下段折り返し・崩れを完全にガード） */
+        /* 🎯 640x128 絶対固定 */
         .signage-container {
             display: flex !important;
             flex-direction: row !important;
@@ -31,7 +31,7 @@
             overflow: hidden;
         }
 
-        /* 128px正方形ブロック（ご指定の縦並び順に最適化したバランス） */
+        /* 128px正方形ブロック */
         .block {
             flex: 0 0 128px !important; 
             width: 128px !important; 
@@ -45,17 +45,14 @@
             padding: 5px 2px 3px 2px;
             text-align: center;
             font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
-            background-color: #B2F1FF; /* 💡 初期背景色を「ほぼ安全」の青に固定（消滅対策） */
-            color: #111111;            /* 💡 初期文字色を黒に固定 */
+            background-color: #B2F1FF; /* 初期値：ほぼ安全 */
+            color: #111111;
             transition: background-color 0.3s ease;
         }
         .block:last-child { border-right: none; }
 
-        /* [1段目] 項目名：暑さ指数(WBGT値) */
         .label { font-size: 9px; font-weight: bold; line-height: 1.0; white-space: nowrap; color: #111111; }
-        .text-dark { color: #111111 !important; }
-
-        /* [2段目] 数値：最大級に強調（40px） */
+        
         .value-container { 
             display: flex; 
             align-items: baseline; 
@@ -66,7 +63,6 @@
         .value { font-size: 40px; font-family: 'Arial Black', sans-serif; font-weight: bold; }
         .unit { font-size: 13px; margin-left: 1px; font-weight: bold; }
 
-        /* [3段目] 顔文字 ＋ 状態文字エリア */
         .status-row {
             display: flex;
             align-items: center;
@@ -76,7 +72,6 @@
             width: 100%;
         }
 
-        /* 顔アイコン（裏読みステージ：サイズを文字と同期） */
         .circle-stage {
             position: relative;
             width: 20px; height: 20px; 
@@ -94,7 +89,6 @@
         }
         .circle-stage img.active { opacity: 1 !important; }
 
-        /* 状態の文字 */
         .status-text { 
             font-size: 14px; 
             font-weight: 900; 
@@ -102,18 +96,16 @@
             white-space: nowrap;
         }
 
-        /* [4段目] 日付 ＋ 時間 */
         .bottom-row {
             display: flex; 
             justify-content: center; 
             align-items: center;
             width: 96%; 
             margin: 0 auto; 
-            background-color: rgba(255, 255, 255, 0.4); /* 💡 最初から見えやすい背景色に固定 */
+            background-color: rgba(255, 255, 255, 0.4);
             border-radius: 2px; 
             height: 16px;
         }
-        .bottom-dark { background-color: rgba(255, 255, 255, 0.4) !important; }
         .time-stamp { 
             font-size: 9px; 
             font-family: monospace; 
@@ -125,8 +117,8 @@
 <body>
     <div class="signage-container">
         <div class="block data-block">
-            <div class="label data-label">暑さ指数(WBGT値)</div>
-            <div class="value-container"><span class="value" id="val-wbgt">21.5</span></div>
+            <div class="label">暑さ指数(WBGT値)</div>
+            <div class="value-container"><span class="value" id="val-wbgt">21.5</span><span class="unit">℃</span></div>
             <div class="status-row">
                 <div class="circle-stage" id="stage-wbgt">
                     <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img class="active" src="5.png">
@@ -137,7 +129,7 @@
         </div>
 
         <div class="block data-block">
-            <div class="label data-label">気温</div>
+            <div class="label">気温</div>
             <div class="value-container"><span class="value" id="val-kion">23.0</span><span class="unit">℃</span></div>
             <div class="status-row">
                 <div class="circle-stage" id="stage-kion">
@@ -149,19 +141,19 @@
         </div>
 
         <div class="block data-block">
-            <div class="label data-label">黒球温度</div>
+            <div class="label">黒球温度</div>
             <div class="value-container"><span class="value" id="val-koku">22.1</span><span class="unit">℃</span></div>
             <div class="status-row">
                 <div class="circle-stage" id="stage-koku">
                     <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img class="active" src="5.png">
                 </div>
-                <span class="status-text" id="status-koku">ほぼ安全</span>
+                <span class="status-text" id="stage-koku">ほぼ安全</span>
             </div>
             <div class="bottom-row"><span class="time-stamp data-time">00/00 00:00:00</span></div>
         </div>
 
         <div class="block data-block">
-            <div class="label data-label">湿度</div>
+            <div class="label">湿度</div>
             <div class="value-container"><span class="value" id="val-shitu">55</span><span class="unit">%</span></div>
             <div class="status-row">
                 <div class="circle-stage" id="stage-shitu">
@@ -178,7 +170,6 @@
     </div>
 
     <script>
-        /* 1秒ごとに時計を更新 */
         function updateClock() {
             const now = new Date();
             const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -189,7 +180,6 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        /* 各リスクレベルに応じたデザインの定義設定 */
         const levelDesigns = {
             "danger":    { bgColor: "#FF5050", txtColor: "#111", txt: "危 険", faceIndex: 0 },
             "severe":    { bgColor: "#FFB366", txtColor: "#111", txt: "厳重警戒", faceIndex: 1 },
@@ -198,7 +188,6 @@
             "safe":      { bgColor: "#B2F1FF", txtColor: "#111", txt: "ほぼ安全", faceIndex: 4 }
         };
 
-        /* 画面表示をガサッと一発で書き換える関数 */
         function updateSignageData(currentLevel, wbgt, kion, koku, shitu) {
             const d = levelDesigns[currentLevel] || levelDesigns["safe"];
             
@@ -219,7 +208,7 @@
             });
         }
 
-        // URLの引数をパース
+        // URLの引数から動的にIDを取得
         const urlParams = new URLSearchParams(window.location.search);
         const corpId = urlParams.get('CorpID') || '18016';
         const loId = urlParams.get('LoID') || '2480';
@@ -227,35 +216,23 @@
 
         function fetchLatestData() {
             const cacheBuster = new Date().getTime();
-            const scrapeUrl = `https://www2.edam.ne.jp/Public/${corpId}/Sokutei/WBGT?LoID=${loId}&_=${cacheBuster}`;
+            
+            // 🎯 【超重要】HTMLではなく、EDAMが裏で叩いている本当の「文字データ取得用URL」へ直接アクセスします！
+            const dataUrl = `https://www2.edam.ne.jp/Public/${corpId}/Sokutei/GetLatestData?LoID=${loId}&_=${cacheBuster}`;
 
-            fetch(scrapeUrl)
-                .then(res => {
-                    if (!res.ok) throw new Error("通信エラー");
-                    return res.text();
-                })
-                .then(htmlText => {
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(htmlText, 'text/html');
-                    const rows = doc.querySelectorAll('table tr');
-                    
-                    let wbgt = null, kion = null, koku = null, shitu = null;
+            fetch(dataUrl)
+                .then(res => res.json())
+                .then(jsonData => {
+                    // JSONデータから必要な数値をマッピング
+                    let wbgt = jsonData.Wbgt || "0.0";
+                    let kion = jsonData.Kion || "0.0";
+                    let koku = jsonData.Koku || "0.0";
+                    let shitu = jsonData.Shitu || "0";
 
-                    rows.forEach(row => {
-                        const text = row.textContent;
-                        if (text.includes("暑さ指数")) {
-                            const m = text.match(/\d+\.\d+/); if (m) wbgt = m[0];
-                        } else if (text.includes("気温")) {
-                            const m = text.match(/\d+\.\d+/); if (m) kion = m[0];
-                        } else if (text.includes("黒球温度")) {
-                            const m = text.match(/\d+\.\d+/); if (m) koku = m[0];
-                        } else if (text.includes("湿度")) {
-                            const m = text.match(/\d+/); if (m) shitu = m[0];
-                        }
-                    });
-
-                    // 💡 ガード：データがちゃんと抜けなかった場合は画面を更新せずスルーする
-                    if (!wbgt || !kion) return;
+                    // 小数点第1位までの形を保証（例：25 -> 25.0）
+                    if(!isNaN(wbgt)) wbgt = parseFloat(wbgt).toFixed(1);
+                    if(!isNaN(kion)) kion = parseFloat(kion).toFixed(1);
+                    if(!isNaN(koku)) koku = parseFloat(koku).toFixed(1);
 
                     let currentLevel = "safe";
                     const wNum = parseFloat(wbgt);
@@ -267,12 +244,12 @@
                     updateSignageData(currentLevel, wbgt, kion, koku, shitu);
                 })
                 .catch(err => {
-                    console.error("データ取得失敗（現在の表示を維持します）:", err);
+                    console.error("データ更新失敗、現在の表示を維持します", err);
                 });
         }
 
         window.addEventListener('DOMContentLoaded', () => {
-            // ロゴの切り替え
+            // ロゴ画像のパス設定
             const logoImg = document.getElementById('dynamic-logo');
             if (logoImg) {
                 logoImg.src = `logos/${corpId}/${loId}_logo.${ext}`;
@@ -282,9 +259,8 @@
                 };
             }
 
-            // 初回データ取得の実行
+            // 初回実行 ＆ 1分（60秒）ごとの自動ループ
             fetchLatestData();
-            // 以降1分ごとにループ
             setInterval(fetchLatestData, 60000);
         });
     </script>
