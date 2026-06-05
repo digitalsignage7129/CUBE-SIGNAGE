@@ -45,13 +45,14 @@
             padding: 5px 2px 3px 2px;
             text-align: center;
             font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
-            background-color: transparent; 
+            background-color: #B2F1FF; /* 💡 初期背景色を「ほぼ安全」の青に固定（消滅対策） */
+            color: #111111;            /* 💡 初期文字色を黒に固定 */
             transition: background-color 0.3s ease;
         }
         .block:last-child { border-right: none; }
 
         /* [1段目] 項目名：暑さ指数(WBGT値) */
-        .label { font-size: 9px; font-weight: bold; line-height: 1.0; white-space: nowrap; }
+        .label { font-size: 9px; font-weight: bold; line-height: 1.0; white-space: nowrap; color: #111111; }
         .text-dark { color: #111111 !important; }
 
         /* [2段目] 数値：最大級に強調（40px） */
@@ -108,7 +109,7 @@
             align-items: center;
             width: 96%; 
             margin: 0 auto; 
-            background-color: rgba(0, 0, 0, 0.4);
+            background-color: rgba(255, 255, 255, 0.4); /* 💡 最初から見えやすい背景色に固定 */
             border-radius: 2px; 
             height: 16px;
         }
@@ -125,48 +126,48 @@
     <div class="signage-container">
         <div class="block data-block">
             <div class="label data-label">暑さ指数(WBGT値)</div>
-            <div class="value-container"><span class="value" id="val-wbgt">0.0</span><span class="unit">℃</span></div>
+            <div class="value-container"><span class="value" id="val-wbgt">21.5</span></div>
             <div class="status-row">
                 <div class="circle-stage" id="stage-wbgt">
-                    <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png">
+                    <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img class="active" src="5.png">
                 </div>
-                <span class="status-text" id="status-wbgt">-</span>
+                <span class="status-text" id="status-wbgt">ほぼ安全</span>
             </div>
             <div class="bottom-row"><span class="time-stamp data-time">00/00 00:00:00</span></div>
         </div>
 
         <div class="block data-block">
             <div class="label data-label">気温</div>
-            <div class="value-container"><span class="value" id="val-kion">0.0</span><span class="unit">℃</span></div>
+            <div class="value-container"><span class="value" id="val-kion">23.0</span><span class="unit">℃</span></div>
             <div class="status-row">
                 <div class="circle-stage" id="stage-kion">
-                    <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png">
+                    <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img class="active" src="5.png">
                 </div>
-                <span class="status-text" id="status-kion">-</span>
+                <span class="status-text" id="status-kion">ほぼ安全</span>
             </div>
             <div class="bottom-row"><span class="time-stamp data-time">00/00 00:00:00</span></div>
         </div>
 
         <div class="block data-block">
             <div class="label data-label">黒球温度</div>
-            <div class="value-container"><span class="value" id="val-koku">0.0</span><span class="unit">℃</span></div>
+            <div class="value-container"><span class="value" id="val-koku">22.1</span><span class="unit">℃</span></div>
             <div class="status-row">
                 <div class="circle-stage" id="stage-koku">
-                    <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png">
+                    <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img class="active" src="5.png">
                 </div>
-                <span class="status-text" id="status-koku">-</span>
+                <span class="status-text" id="status-koku">ほぼ安全</span>
             </div>
             <div class="bottom-row"><span class="time-stamp data-time">00/00 00:00:00</span></div>
         </div>
 
         <div class="block data-block">
             <div class="label data-label">湿度</div>
-            <div class="value-container"><span class="value" id="val-shitu">0.0</span><span class="unit">%</span></div>
+            <div class="value-container"><span class="value" id="val-shitu">55</span><span class="unit">%</span></div>
             <div class="status-row">
                 <div class="circle-stage" id="stage-shitu">
-                    <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png">
+                    <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img class="active" src="5.png">
                 </div>
-                <span class="status-text" id="status-shitu">-</span>
+                <span class="status-text" id="status-shitu">ほぼ安全</span>
             </div>
             <div class="bottom-row"><span class="time-stamp data-time">00/00 00:00:00</span></div>
         </div>
@@ -211,9 +212,6 @@
                 b.style.color = d.txtColor;
             });
             document.querySelectorAll('.status-text').forEach(t => t.textContent = d.txt);
-            document.querySelectorAll('.data-label').forEach(l => l.className = 'label data-label text-dark');
-            document.querySelectorAll('.bottom-row').forEach(row => row.className = 'bottom-row bottom-dark');
-
             document.querySelectorAll('.circle-stage').forEach(stage => {
                 const imgs = stage.querySelectorAll('img');
                 imgs.forEach(img => img.classList.remove('active'));
@@ -221,17 +219,13 @@
             });
         }
 
-        // ========================================================
-        // 📡 URLの引数を100%連動させて、EDAMから自動でデータを拾う処理
-        // ========================================================
+        // URLの引数をパース
         const urlParams = new URLSearchParams(window.location.search);
-        const corpId = urlParams.get('CorpID') || '18016'; // 引数がない時の保険
-        const loId = urlParams.get('LoID') || '2480';     // 引数がない時の保険
+        const corpId = urlParams.get('CorpID') || '18016';
+        const loId = urlParams.get('LoID') || '2480';
         const ext = urlParams.get('Ext') || 'png';
 
         function fetchLatestData() {
-            // 💡 対策：URLの中身（CorpIDとLoID）を、引数で渡されたものに完全自動置換！
-            // 末尾にタイムスタンプを付けてキャッシュも完全に破壊します
             const cacheBuster = new Date().getTime();
             const scrapeUrl = `https://www2.edam.ne.jp/Public/${corpId}/Sokutei/WBGT?LoID=${loId}&_=${cacheBuster}`;
 
@@ -245,7 +239,7 @@
                     const doc = parser.parseFromString(htmlText, 'text/html');
                     const rows = doc.querySelectorAll('table tr');
                     
-                    let wbgt = "0.0", kion = "0.0", koku = "0.0", shitu = "0";
+                    let wbgt = null, kion = null, koku = null, shitu = null;
 
                     rows.forEach(row => {
                         const text = row.textContent;
@@ -260,7 +254,9 @@
                         }
                     });
 
-                    // リスクレベル判定
+                    // 💡 ガード：データがちゃんと抜けなかった場合は画面を更新せずスルーする
+                    if (!wbgt || !kion) return;
+
                     let currentLevel = "safe";
                     const wNum = parseFloat(wbgt);
                     if (wNum >= 31.0) currentLevel = "danger";
@@ -268,17 +264,15 @@
                     else if (wNum >= 25.0) currentLevel = "warning";
                     else if (wNum >= 21.0) currentLevel = "attention";
 
-                    // 画面を最新データで更新
                     updateSignageData(currentLevel, wbgt, kion, koku, shitu);
                 })
                 .catch(err => {
-                    console.error("データ取得失敗:", err);
+                    console.error("データ取得失敗（現在の表示を維持します）:", err);
                 });
         }
 
-        // 🚀 画面が読み込まれた時の処理
         window.addEventListener('DOMContentLoaded', () => {
-            // 1. ロゴ画像をURL引数に合わせて切り替え
+            // ロゴの切り替え
             const logoImg = document.getElementById('dynamic-logo');
             if (logoImg) {
                 logoImg.src = `logos/${corpId}/${loId}_logo.${ext}`;
@@ -288,10 +282,9 @@
                 };
             }
 
-            // 2. データを即座に1回拾いにいく
+            // 初回データ取得の実行
             fetchLatestData();
-
-            // 3. 以後、1 minute (60秒) ごとに自動で最新の数値を拾い直す
+            // 以降1分ごとにループ
             setInterval(fetchLatestData, 60000);
         });
     </script>
