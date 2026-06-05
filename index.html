@@ -6,178 +6,72 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT現場デジタルサイネージ（本番運用版）</title>
+    <title>WBGT現場デジタルサイネージ（データ自動連動版）</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            background-color: #000000;
-            overflow: hidden;
-            width: 100vw; height: 100vh;
-            display: flex; justify-content: flex-start; align-items: flex-start;
-        }
-
-        /* 🎯 640x128 絶対固定（下段折り返し・崩れを完全にガード） */
-        .signage-container {
-            display: flex !important;
-            flex-direction: row !important;
-            flex-wrap: nowrap !important;
-            width: 640px !important;
-            height: 128px !important;
-            min-width: 640px !important;
-            max-width: 640px !important;
-            min-height: 128px !important;
-            max-height: 128px !important;
-            background-color: #000000;
-            overflow: hidden;
-        }
-
-        /* 128px正方形ブロック（ご指定の縦並び順に最適化したバランス） */
-        .block {
-            flex: 0 0 128px !important; 
-            width: 128px !important; 
-            height: 128px !important;
-            min-width: 128px !important;
-            max-width: 128px !important;
-            border-right: 1px solid #1a1a1a;
-            display: flex; 
-            flex-direction: column; 
-            justify-content: space-between; 
-            padding: 5px 2px 3px 2px;
-            text-align: center;
-            font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
-            background-color: transparent; 
-            transition: background-color 0.3s ease;
-        }
+        body { background-color: #000000; overflow: hidden; width: 100vw; height: 100vh; display: flex; justify-content: flex-start; align-items: flex-start; }
+        .signage-container { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; width: 640px !important; height: 128px !important; background-color: #000000; overflow: hidden; }
+        .block { flex: 0 0 128px !important; width: 128px !important; height: 128px !important; border-right: 1px solid #1a1a1a; display: flex; flex-direction: column; justify-content: space-between; padding: 5px 2px 3px 2px; text-align: center; font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; background-color: #B2F1FF; color: #111111; transition: background-color 0.3s ease; }
         .block:last-child { border-right: none; }
-
-        /* [1段目] 項目名：暑さ指数(WBGT値) */
-        .label { font-size: 9px; font-weight: bold; line-height: 1.0; white-space: nowrap; }
+        .label { font-size: 9px; font-weight: bold; line-height: 1.0; white-space: nowrap; color: #111111; }
         .text-dark { color: #111111 !important; }
-
-        /* [2段目] 数値：最大級に強調（40px） */
-        .value-container { 
-            display: flex; 
-            align-items: baseline; 
-            justify-content: center; 
-            line-height: 0.8; 
-            margin: 2px 0;
-        }
+        .value-container { display: flex; align-items: baseline; justify-content: center; line-height: 0.8; margin: 2px 0; }
         .value { font-size: 40px; font-family: 'Arial Black', sans-serif; font-weight: bold; }
         .unit { font-size: 13px; margin-left: 1px; font-weight: bold; }
-
-        /* [3段目] 顔文字 ＋ 状態文字エリア */
-        .status-row {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px; 
-            height: 22px; 
-            width: 100%;
-        }
-
-        /* 顔アイコン（裏読みステージ：サイズを文字と同期） */
-        .circle-stage {
-            position: relative;
-            width: 20px; height: 20px; 
-            border-radius: 50%;
-            overflow: hidden;
-            flex-shrink: 0;
-        }
-        .circle-stage img {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            object-fit: contain;
-            opacity: 0;
-            transition: opacity 0.1s ease;
-        }
+        .status-row { display: flex; align-items: center; justify-content: center; gap: 5px; height: 22px; width: 100%; }
+        .circle-stage { position: relative; width: 20px; height: 20px; border-radius: 50%; overflow: hidden; flex-shrink: 0; }
+        .circle-stage img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; opacity: 0; transition: opacity 0.1s ease; }
         .circle-stage img.active { opacity: 1 !important; }
-
-        /* 状態の文字 */
-        .status-text { 
-            font-size: 14px; 
-            font-weight: 900; 
-            line-height: 20px; 
-            white-space: nowrap;
-        }
-
-        /* [4段目] 日付 ＋ 時間 */
-        .bottom-row {
-            display: flex; 
-            justify-content: center; 
-            align-items: center;
-            width: 96%; 
-            margin: 0 auto; 
-            background-color: rgba(0, 0, 0, 0.4);
-            border-radius: 2px; 
-            height: 16px;
-        }
+        .status-text { font-size: 14px; font-weight: 900; line-height: 20px; white-space: nowrap; }
+        .bottom-row { display: flex; justify-content: center; align-items: center; width: 96%; margin: 0 auto; background-color: rgba(255, 255, 255, 0.4); border-radius: 2px; height: 16px; }
         .bottom-dark { background-color: rgba(255, 255, 255, 0.4) !important; }
-        .time-stamp { 
-            font-size: 9px; 
-            font-family: monospace; 
-            line-height: 1.0; 
-            letter-spacing: 0.5px;
-        }
+        .time-stamp { font-size: 9px; font-family: monospace; line-height: 1.0; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
     <div class="signage-container">
         <div class="block data-block">
             <div class="label data-label">暑さ指数(WBGT値)</div>
-            <div class="value-container"><span class="value" id="val-wbgt">0.0</span><span class="unit">℃</span></div>
+            <div class="value-container"><span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span></div>
             <div class="status-row">
-                <div class="circle-stage" id="stage-wbgt">
-                    <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png">
-                </div>
+                <div class="circle-stage" id="stage-wbgt"><img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png"></div>
                 <span class="status-text" id="status-wbgt">-</span>
             </div>
             <div class="bottom-row"><span class="time-stamp data-time">00/00 00:00:00</span></div>
         </div>
-
         <div class="block data-block">
             <div class="label data-label">気温</div>
-            <div class="value-container"><span class="value" id="val-kion">0.0</span><span class="unit">℃</span></div>
+            <div class="value-container"><span class="value" id="val-kion">--.-</span><span class="unit">℃</span></div>
             <div class="status-row">
-                <div class="circle-stage" id="stage-kion">
-                    <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png">
-                </div>
+                <div class="circle-stage" id="stage-kion"><img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png"></div>
                 <span class="status-text" id="status-kion">-</span>
             </div>
             <div class="bottom-row"><span class="time-stamp data-time">00/00 00:00:00</span></div>
         </div>
-
         <div class="block data-block">
             <div class="label data-label">黒球温度</div>
-            <div class="value-container"><span class="value" id="val-koku">0.0</span><span class="unit">℃</span></div>
+            <div class="value-container"><span class="value" id="val-koku">--.-</span><span class="unit">℃</span></div>
             <div class="status-row">
-                <div class="circle-stage" id="stage-koku">
-                    <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png">
-                </div>
+                <div class="circle-stage" id="stage-koku"><img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png"></div>
                 <span class="status-text" id="status-koku">-</span>
             </div>
             <div class="bottom-row"><span class="time-stamp data-time">00/00 00:00:00</span></div>
         </div>
-
         <div class="block data-block">
             <div class="label data-label">湿度</div>
-            <div class="value-container"><span class="value" id="val-shitu">0.0</span><span class="unit">%</span></div>
+            <div class="value-container"><span class="value" id="val-shitu">--</span><span class="unit">%</span></div>
             <div class="status-row">
-                <div class="circle-stage" id="stage-shitu">
-                    <img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png">
-                </div>
+                <div class="circle-stage" id="stage-shitu"><img src="1.png"><img src="2.png"><img src="3.png"><img src="4.png"><img src="5.png"></div>
                 <span class="status-text" id="status-shitu">-</span>
             </div>
             <div class="bottom-row"><span class="time-stamp data-time">00/00 00:00:00</span></div>
         </div>
-
         <div class="block" style="background:#000; padding:0; display:flex; align-items:center; justify-content:center;">
-            <img src="logo.png" style="width:100%; height:100%; object-fit:contain;">
+            <img id="dynamic-logo" src="logo.png" style="width:100%; height:100%; object-fit:contain;">
         </div>
     </div>
 
     <script>
-        /* 1秒ごとに時計を更新（MM/DD hh:mm:ss） */
         function updateClock() {
             const now = new Date();
             const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -185,57 +79,56 @@
             const timeString = `${month}/${date} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
             document.querySelectorAll('.data-time').forEach(el => el.textContent = timeString);
         }
-        setInterval(updateClock, 1000);
-        updateClock();
+        setInterval(updateClock, 1000); updateClock();
 
-        /* 🎯 各リスクレベルに応じたデザインの定義設定 */
         const levelDesigns = {
-            "danger":    { bgColor: "#FF5050", txtColor: "#111", txt: "危 険", faceIndex: 0 },   // 1.png
-            "severe":    { bgColor: "#FFB366", txtColor: "#111", txt: "厳重警戒", faceIndex: 1 }, // 2.png
-            "warning":   { bgColor: "#FFFF80", txtColor: "#111", txt: "警 戒", faceIndex: 2 },   // 3.png
-            "attention": { bgColor: "#B3FF99", txtColor: "#111", txt: "注 意", faceIndex: 3 },   // 4.png
-            "safe":      { bgColor: "#B2F1FF", txtColor: "#111", txt: "ほぼ安全", faceIndex: 4 }    // 5.png
+            "danger":    { bgColor: "#FF5050", txtColor: "#111", txt: "危 険", faceIndex: 0 },
+            "severe":    { bgColor: "#FFB366", txtColor: "#111", txt: "厳重警戒", faceIndex: 1 },
+            "warning":   { bgColor: "#FFFF80", txtColor: "#111", txt: "警 戒", faceIndex: 2 },
+            "attention": { bgColor: "#B3FF99", txtColor: "#111", txt: "注 意", faceIndex: 3 },
+            "safe":      { bgColor: "#B2F1FF", txtColor: "#111", txt: "ほぼ安全", faceIndex: 4 }
         };
 
-        /**
-         * 🎯 本番用：システム側からデータを流し込んで画面を一発更新する関数
-         * @param {string} currentLevel - "danger", "severe", "warning", "attention", "safe" のいずれか
-         * @param {number|string} wbgt - 暑さ指数
-         * @param {number|string} kion - 気温
-         * @param {number|string} koku - 黒球温度
-         * @param {number|string} shitu - 湿度
-         */
-        function updateSignageData(currentLevel, wbgt, kion, koku, shitu) {
-            const d = levelDesigns[currentLevel] || levelDesigns["safe"];
-            
-            // 1. 数値の書き換え
-            document.getElementById('val-wbgt').textContent = wbgt;
-            document.getElementById('val-kion').textContent = kion;
-            document.getElementById('val-koku').textContent = koku;
-            document.getElementById('val-shitu').textContent = shitu;
+        const urlParams = new URLSearchParams(window.location.search);
+        const corpId = urlParams.get('CorpID') || '18016';
+        const loId = urlParams.get('LoID') || '2480';
+        const ext = urlParams.get('Ext') || 'png';
 
-            // 2. 背景色と文字色の同期適用
-            document.querySelectorAll('.data-block').forEach(b => {
-                b.style.backgroundColor = d.bgColor;
-                b.style.color = d.txtColor;
-            });
-            document.querySelectorAll('.status-text').forEach(t => t.textContent = d.txt);
-            document.querySelectorAll('.data-label').forEach(l => l.className = 'label data-label text-dark');
-            document.querySelectorAll('.bottom-row').forEach(row => row.className = 'bottom-row bottom-dark');
+        function loadJsonData() {
+            // GitHub Actionsが自動生成する各現場のJSONデータを読み込む
+            fetch(`data/${corpId}/${loId}.json?_=${new Date().getTime()}`)
+                .then(res => res.json())
+                .then(d => {
+                    document.getElementById('val-wbgt').textContent = parseFloat(d.wbgt).toFixed(1);
+                    document.getElementById('val-kion').textContent = parseFloat(d.kion).toFixed(1);
+                    document.getElementById('val-koku').textContent = parseFloat(d.koku).toFixed(1);
+                    document.getElementById('val-shitu').textContent = d.shitu;
 
-            // 3. 顔アイコンのインデックス切り替え（超高速裏読み仕様）
-            document.querySelectorAll('.circle-stage').forEach(stage => {
-                const imgs = stage.querySelectorAll('img');
-                imgs.forEach(img => img.classList.remove('active'));
-                if(imgs[d.faceIndex]) {
-                    imgs[d.faceIndex].classList.add('active');
-                }
-            });
+                    const design = levelDesigns[d.level] || levelDesigns["safe"];
+                    document.querySelectorAll('.data-block').forEach(b => { b.style.backgroundColor = design.bgColor; b.style.color = design.txtColor; });
+                    document.querySelectorAll('.status-text').forEach(t => t.textContent = design.txt);
+                    document.querySelectorAll('.data-label').forEach(l => l.className = 'label data-label text-dark');
+                    document.querySelectorAll('.bottom-row').forEach(row => row.className = 'bottom-row bottom-dark');
+                    document.querySelectorAll('.circle-stage').forEach(stage => {
+                        const imgs = stage.querySelectorAll('img');
+                        imgs.forEach(img => img.classList.remove('active'));
+                        if(imgs[design.faceIndex]) imgs[design.faceIndex].classList.add('active');
+                    });
+                }).catch(err => console.log("データ生成待ち、または読込エラー"));
         }
 
-        // 🚀 初期表示用の呼び出し例（本番環境に合わせて初期値をセットしてください）
-        // 例: ほぼ安全状態でスタートする場合
-        updateSignageData("safe", "21.5", "23.0", "22.1", "55.0");
+        window.addEventListener('DOMContentLoaded', () => {
+            const logoImg = document.getElementById('dynamic-logo');
+            if (logoImg) {
+                logoImg.src = `logos/${corpId}/${loId}_logo.${ext}`;
+                logoImg.onerror = function() {
+                    this.src = `logos/${corpId}/${loId}.${ext}`;
+                    this.onerror = function() { this.src = "logo.png"; };
+                };
+            }
+            loadJsonData();
+            setInterval(loadJsonData, 30000); // 30秒ごとに自分のJSONを確認
+        });
     </script>
 </body>
 </html>
