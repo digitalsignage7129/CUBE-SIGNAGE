@@ -18,8 +18,8 @@
 <body>
 
 <div class="box">
-    <h2>🏗️ 現場ロゴ・アップロード</h2>
-    <p style="font-size: 0.85em; color: #aaa;">配布された「アクセスキー」と現場情報を入力して、ロゴ画像をアップロードしてください。</p>
+    <h2>🏗️ 現場ロゴ・アップロード & 監視登録</h2>
+    <p style="font-size: 0.85em; color: #aaa;">配布された「アクセスキー」と現場情報を入力して、ロゴ画像をアップロードしてください。自動的にサイネージのデータ連動が開始されます。</p>
     
     <label>① アクセスキー（共通パスワード）</label>
     <input type="password" id="targetKey" placeholder="ghp_ で始まるキーを貼り付けてください">
@@ -38,7 +38,7 @@
     <div id="status-msg"></div>
 
     <div id="result-area" class="result">
-        <p>🎉 ロゴの反映が成功しました！</p>
+        <p>🎉 ロゴの反映と現場のデータ連動登録が成功しました！</p>
         <p>サイネージ（PlayerMaster等）に登録するURLは以下です：</p>
         <div id="display-url-text" style="background:#000; padding:10px; font-family:monospace; word-break:break-all; margin:10px 0;"></div>
         <p><a id="btn-signage" target="_blank">👉 サイネージ画面を確認する</a></p>
@@ -49,7 +49,6 @@
     const REPO_OWNER = "digitalsignage7129";
     const REPO_NAME = "CUBE-SIGNAGE";
 
-    // 画面が開いたときにURLの引数（CorpID等）があれば自動入力する（親切機能）
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
         if(urlParams.has('CorpID')) document.getElementById('corpId').value = urlParams.get('CorpID');
@@ -65,65 +64,99 @@
         const msgDiv = document.getElementById('status-msg');
         const btn = document.getElementById('submit-btn');
 
-        if (!githubToken) {
-            alert("アクセスキー（ghp_...）を入力してください。");
-            return;
-        }
-        if (!corpId || !loId || !file) {
-            alert("すべての項目を入力・選択してください。");
-            return;
-        }
+        if (!githubToken) { alert("アクセスキー（ghp_...）を入力してください。"); return; }
+        if (!corpId || !loId || !file) { alert("すべての項目を入力・選択してください。"); return; }
 
         btn.disabled = true;
-        msgDiv.textContent = "画像をアップロード中...（数十秒かかる場合があります）";
+        msgDiv.textContent = "システム処理中...（ロゴ反映と自動巡回への登録を行っています）";
 
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = async function () {
             const base64Content = reader.result.split(',')[1];
             const fileExt = file.name.split('.').pop();
-            const filePath = `logos/${corpId}/${loId}_logo.${fileExt}`;
-            const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${filePath}`;
-
+            
             try {
-                let sha = "";
-                // 既存のロゴがあるか確認
-                const checkRes = await fetch(url, {
-                    headers: { "Authorization": `Bearer ${githubToken}` }
-                });
-                if (checkRes.ok) {
-                    const checkData = await checkRes.json();
-                    sha = checkData.sha;
+                // --------------------------------------------------
+                // 🛠️ 処理A: 現場ロゴ画像のアップロード（既存の仕様ママ）
+                // --------------------------------------------------
+                const logoPath = `logos/${corpId}/${loId}_logo.${fileExt}`;
+                const logoUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${logoPath}`;
+                
+                let logoSha = "";
+                const checkLogoRes = await fetch(logoUrl, { headers: { "Authorization": `Bearer ${githubToken}` } });
+                if (checkLogoRes.ok) {
+                    const logoData = await checkLogoRes.json();
+                    logoSha = logoData.sha;
                 }
 
-                // GitHubへ直接アップロード
-                const res = await fetch(url, {
+                const uploadLogoRes = await fetch(logoUrl, {
                     method: "PUT",
-                    headers: {
-                        "Authorization": `Bearer ${githubToken}`,
-                        "Content-Type": "application/json"
-                    },
+                    headers: { "Authorization": `Bearer ${githubToken}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
                         message: `Upload logo by Client for Corp:${corpId} LoID:${loId}`,
                         content: base64Content,
-                        sha: sha
+                        sha: logoSha
                     })
                 });
+                if (!uploadLogoRes.ok) throw new Error("Logo upload failed");
 
-                if (res.ok) {
-                    msgDiv.textContent = "";
-                    const basePath = window.location.href.split('?')[0].replace('admin.html', '');
-                    const signageUrl = `${basePath}index.html?CorpID=${corpId}&LoID=${loId}&Ext=${fileExt}`;
-                    
-                    document.getElementById('display-url-text').textContent = signageUrl;
-                    document.getElementById('btn-signage').href = signageUrl;
-                    document.getElementById('result-area').style.display = 'block';
-                    alert("保存に成功しました！サイネージ用URLが発行されました。");
-                } else {
-                    throw new Error("Upload failed");
+                // --------------------------------------------------
+                // 🔄 処理B: sites.txt へ現場IDを自動追記する（完全自動化）
+                // --------------------------------------------------
+                const sitesUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/sites.txt`;
+                let sitesSha = "";
+                let currentSitesContent = "";
+
+                const checkSitesRes = await fetch(sitesUrl, { headers: { "Authorization": `Bearer ${githubToken}` } });
+                if (checkSitesRes.ok) {
+                    const sitesData = await checkSitesRes.json();
+                    sitesSha = sitesData.sha;
+                    // UTF-8崩れを防ぐデコード
+                    currentSitesContent = decodeURIComponent(escape(atob(sitesData.content.replace(/\s/g, ''))));
                 }
+
+                const targetLine = `${corpId},${loId}`;
+                const lines = currentSitesContent.split('\n').map(l => l.trim());
+
+                // すでに登録済みの現場でなければ追記する
+                if (!lines.includes(targetLine)) {
+                    const newSitesContent = currentSitesContent.trim() ? `${currentSitesContent.trim()}\n${targetLine}` : targetLine;
+                    const encodedSites = btoa(unescape(encodeURIComponent(newSitesContent)));
+
+                    await fetch(sitesUrl, {
+                        method: "PUT",
+                        headers: { "Authorization": `Bearer ${githubToken}`, "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            message: `Auto register site ${targetLine} via Admin logo upload`,
+                            content: encodedSites,
+                            sha: sitesSha
+                        })
+                    });
+                }
+
+                // --------------------------------------------------
+                // 🎉 処理C: 成功画面の表示 & バックグラウンドで即時巡回キック
+                // --------------------------------------------------
+                msgDiv.textContent = "";
+                const basePath = window.location.href.split('?')[0].replace('admin.html', '');
+                const signageUrl = `${basePath}index.html?CorpID=${corpId}&LoID=${loId}&Ext=${fileExt}`;
+                
+                document.getElementById('display-url-text').textContent = signageUrl;
+                document.getElementById('btn-signage').href = signageUrl;
+                document.getElementById('result-area').style.display = 'block';
+                
+                alert("登録に成功しました！サイネージ用URLが発行されました。");
+
+                // 10分待たずに、今すぐこの現場のデータをEDAMから回収するコマンドを裏で叩く
+                fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/workflows/main.yml/dispatches`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${githubToken}`, 'Accept': 'application/vnd.github.v3+json' },
+                    body: JSON.stringify({ ref: 'main' })
+                });
+
             } catch (err) {
-                alert("保存に失敗しました。アクセスキー（ghp_...）が間違っているか、期限が切れている可能性があります。");
+                alert("保存に失敗しました。アクセスキーが間違っているか、通信エラーが発生しました。");
                 console.error(err);
             } finally {
                 btn.disabled = false;
