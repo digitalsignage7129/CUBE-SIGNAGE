@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT環境モニター（文字最大化版）</title>
+    <title>WBGT環境モニター（文字サイズ極大化版）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -45,7 +45,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between; 
-            padding: 7px 3px 4px 3px; /* 上下の余白を微調整 */
+            padding: 5px 3px 2px 3px; /* 下部まで文字枠を広げるためパディングを攻めの設計に */
             text-align: center;
             background-color: #000000;
             color: #FFFFFF;
@@ -57,40 +57,23 @@
             border-right: none;
         }
 
-        /* 【上段】項目ラベル：限界まで大きく太く修正！ */
+        /* 【上段】項目ラベル：顔写真が退いたため、2段に折り返してでも限界までデカく！ */
         .label {
-            font-size: 14px; /* 12pxから14pxへさらに拡大！ */
+            font-size: 16px; /* 14pxから16pxへ劇的拡大！ */
             font-weight: 900;
             color: #FFFFFF !important;
-            white-space: nowrap;
-            line-height: 1.0;
+            white-space: normal; /* 2段に自然に折れるように変更 */
+            line-height: 1.1;
             letter-spacing: -0.5px;
             text-shadow: 1px 1px 0px #000000;
-        }
-        .text-dark { color: #000000 !important; text-shadow: none !important; }
-
-        /* 【上段と中段の間】切り抜いた顔写真エリア：一回りコンパクトに縮小 */
-        .avatar-box {
-            width: 100%;
-            height: 32px; /* 44pxから32pxへ縮小して文字スペースを捻出 */
+            height: 36px; /* 高さを確保して数値を押し下げない */
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-top: 1px;
-            overflow: hidden;
         }
-        .avatar-img {
-            height: 100%;
-            width: auto;
-            object-fit: contain;
-            border-radius: 50%;
-            filter: brightness(1.65) drop-shadow(0px 1px 1px rgba(0,0,0,0.8));
-        }
-        .no-filter {
-            filter: drop-shadow(0px 1px 1px rgba(0,0,0,0.8)) !important;
-        }
+        .text-dark { color: #000000 !important; text-shadow: none !important; }
 
-        /* 【中段】数値表示 */
+        /* 【中段】数値表示：縦サイズに余裕ができたので視認性抜群 */
         .value-container {
             display: flex;
             align-items: baseline;
@@ -113,44 +96,77 @@
             line-height: 1.0;
         }
 
-        /* 【下段】文言 ＋ 時計エリア */
+        /* 【下段】大改造エリア：ここが今回の一番の肝です */
         .bottom-row {
             display: flex;
-            justify-content: center;
-            align-items: center;
+            flex-direction: column; /* 警戒エリアと時計エリアを縦に2段積み */
             width: 100%;
             background-color: rgba(0, 0, 0, 0.5);
             border-radius: 2px;
-            height: 24px; /* 22pxから24pxへさらに縦幅を拡張 */
-            position: relative;
+            padding: 2px 0;
         }
         .bottom-dark {
             background-color: rgba(255, 255, 255, 0.5) !important;
         }
+
+        /* 下段・1行目：顔文字と文言のドッキング横並び */
+        .status-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px; /* 顔文字と文字の間の隙間 */
+            width: 100%;
+            height: 18px;
+        }
+
+        /* お引越ししてきた顔写真（アイコンサイズ化） */
+        .avatar-box {
+            width: 16px;  /* 文字の高さ（16px）と完全同期 */
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .avatar-img {
+            height: 100%;
+            width: 100%;
+            object-fit: contain;
+            border-radius: 50%;
+            filter: brightness(1.65) drop-shadow(0px 1px 1px rgba(0,0,0,0.8));
+        }
+        .no-filter {
+            filter: drop-shadow(0px 1px 1px rgba(0,0,0,0.8)) !important;
+        }
         
-        /* 警戒文言 */
+        /* 警戒文言：さらにサイズアップしてド迫力に！ */
         .status-text {
-            font-size: 14px;
+            font-size: 16px; /* 14pxから16pxへ拡大！ */
             font-weight: 900;
             font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
             white-space: nowrap;
             line-height: 1.0;
-            letter-spacing: 0.5px;
-            margin-left: -25px; /* 右側の時計スペースを避けてやや左寄りに */
         }
         
-        /* 【時計】サイズアップ＋極太化してガッツリ読めるように修正！ */
+        /* 下段・2行目：爆大化した時間表示専用エリア */
+        .time-area {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 2px;
+        }
+
+        /* 時計：日付（月/日）と時間をめいっぱいサイズアップ！ */
         .time-stamp {
-            position: absolute;
-            right: 4px;
-            bottom: 4px;
-            font-size: 11px; /* 8pxから11pxへ大幅拡大！ */
+            font-size: 13px; /* 11pxから13pxへさらに超拡大！ */
             font-family: 'Arial Black', 'Impact', monospace;
-            font-weight: 900; /* 超極太 */
+            font-weight: 900;
             white-space: nowrap;
             line-height: 1.0;
             color: #FFFFFF !important;
             text-shadow: 1px 1px 0px #000000;
+            letter-spacing: 0.5px;
         }
         .time-dark { color: #000000 !important; text-shadow: none !important; }
         .time-light { color: #FFFFFF !important; }
@@ -180,50 +196,66 @@
 
     <div class="signage-container">
         <div class="block data-block">
-            <div class="label data-label">暑さ指数(WBGT)</div>
-            <div class="avatar-box"><img src="5.png" id="img-wbgt" class="avatar-img" alt="顔"></div>
+            <div class="label data-label">暑さ指数<br>(WBGT)</div>
             <div class="value-container">
                 <span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span>
             </div>
             <div class="bottom-row" id="bottom-wbgt">
-                <span class="status-text" id="status-wbgt">――</span>
-                <span class="time-stamp data-time">00:00</span>
+                <div class="status-area">
+                    <div class="avatar-box"><img src="5.png" id="img-wbgt" class="avatar-img" alt="顔"></div>
+                    <span class="status-text" id="status-wbgt">――</span>
+                </div>
+                <div class="time-area">
+                    <span class="time-stamp data-time">00/00 00:00</span>
+                </div>
             </div>
         </div>
 
         <div class="block data-block">
             <div class="label data-label">現場気温</div>
-            <div class="avatar-box"><img src="5.png" id="img-kion" class="avatar-img" alt="顔"></div>
             <div class="value-container">
                 <span class="value" id="val-kion">--.-</span><span class="unit">℃</span>
             </div>
             <div class="bottom-row" id="bottom-kion">
-                <span class="status-text" id="status-kion">――</span>
-                <span class="time-stamp data-time">00:00</span>
+                <div class="status-area">
+                    <div class="avatar-box"><img src="5.png" id="img-kion" class="avatar-img" alt="顔"></div>
+                    <span class="status-text" id="status-kion">――</span>
+                </div>
+                <div class="time-area">
+                    <span class="time-stamp data-time">00/00 00:00</span>
+                </div>
             </div>
         </div>
 
         <div class="block data-block">
             <div class="label data-label">黒球温度</div>
-            <div class="avatar-box"><img src="5.png" id="img-koku" class="avatar-img" alt="顔"></div>
             <div class="value-container">
                 <span class="value" id="val-koku">--.-</span><span class="unit">℃</span>
             </div>
             <div class="bottom-row" id="bottom-koku">
-                <span class="status-text" id="status-koku">――</span>
-                <span class="time-stamp data-time">00:00</span>
+                <div class="status-area">
+                    <div class="avatar-box"><img src="5.png" id="img-koku" class="avatar-img" alt="顔"></div>
+                    <span class="status-text" id="status-koku">――</span>
+                </div>
+                <div class="time-area">
+                    <span class="time-stamp data-time">00/00 00:00</span>
+                </div>
             </div>
         </div>
 
         <div class="block data-block">
             <div class="label data-label">現場湿度</div>
-            <div class="avatar-box"><img src="5.png" id="img-shitu" class="avatar-img" alt="顔"></div>
             <div class="value-container">
                 <span class="value" id="val-shitu">--.-</span><span class="unit">%</span>
             </div>
             <div class="bottom-row" id="bottom-shitu">
-                <span class="status-text" id="status-shitu">――</span>
-                <span class="time-stamp data-time">00:00</span>
+                <div class="status-area">
+                    <div class="avatar-box"><img src="5.png" id="img-shitu" class="avatar-img" alt="顔"></div>
+                    <span class="status-text" id="status-shitu">――</span>
+                </div>
+                <div class="time-area">
+                    <span class="time-stamp data-time">00/00 00:00</span>
+                </div>
             </div>
         </div>
 
@@ -241,10 +273,15 @@
 
         const dataUrl = `data/${corpId}/${loId}.json`;
 
-        // 🎯 128ピッチの横幅に極太11px文字で秒まで入れると潰れるため、「時:分（17:05）」のデカ文字表示に変更！
+        // 🎯 時間だけでなく、現場要望の「日付（月/日）」まで含めてガッツリ太字で出すようにアップデート！
         function updateClock() {
             const now = new Date();
-            const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const date = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            const timeString = `${month}/${date} ${hours}:${minutes}`; // 例: "06/05 17:15"
             document.querySelectorAll('.data-time').forEach(el => el.textContent = timeString);
         }
 
