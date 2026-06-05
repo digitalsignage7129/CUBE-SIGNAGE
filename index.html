@@ -220,22 +220,31 @@
             });
         }
 
-        /**
-         * 🎯【新機能】URLの末尾からLoIDを取得してスクレイピング（API等）を切り替える処理
-         */
-        function initSignage() {
-            // URLの「?LoID=2451」といったパラメータを解析する
-            const urlParams = new URLSearchParams(window.location.search);
-            const loid = urlParams.get('LoID') || '2451'; // URLになければデフォルト「2451」
+       function initSignage() {
+    // 1. URLから5桁コードと4桁ID、および拡張子を取得
+    const urlParams = new URLSearchParams(window.location.search);
+    const corpId = urlParams.get('CorpID') || '00574';
+    const loid = urlParams.get('LoID') || '2451';
+    const ext = urlParams.get('Ext') || 'png'; // 画像の拡張子（無ければ標準はpng）
+    
+    // 🎯 規則性に基づいて、自動保存されたロゴのパスをピンポイントで生成
+    // 例: logos/00574/2451_logo.png
+    const autoLogoPath = `logos/${corpId}/${loid}_logo.${ext}`;
 
-            console.log("現在の監視対象LoID:", loid);
+    // 5区画目のロゴに一発適用
+    const logoImg = document.getElementById('signage-logo');
+    if (logoImg) {
+        logoImg.src = autoLogoPath;
+    }
 
-            // 💡 運用フェーズの連携イメージ：
-            // ここで `loid` を使ってPythonで作ったAPIサーバーや、対応するJSONファイル等から
-            // リアルタイムのデータをfetch（取得）し、updateSignageData関数に流し込む形になります。
-            
-            // 例として初期値をセット
-            updateSignageData("safe", "21.5", "23.0", "22.1", "55.0");
+    // 2. 正式なE-DAMのデータ取得先URLを生成（Python連携やスクレイピング用）
+    const targetDataURL = `https://www2.edam.ne.jp/Public/${corpId}/Sokutei/WBGT?LoID=${loid}`;
+    console.log("今回のデータ取得対象:", targetDataURL);
+    console.log("読み込んだロゴ画像:", autoLogoPath);
+    
+    // 初期表示用の呼び出し
+    updateSignageData("safe", "21.5", "23.0", "22.1", "55.0");
+}
         }
 
         // 起動時にURLパラメーターを確認
