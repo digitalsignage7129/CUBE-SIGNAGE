@@ -1,4 +1,13 @@
-<style>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Expires" content="0">
+    <title>WBGT環境モニター（超高視認性版）</title>
+    <style>
         * {
             box-sizing: border-box;
             margin: 0;
@@ -36,7 +45,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between; 
-            padding: 6px 3px 4px 3px; /* 上下の余白を最適化 */
+            padding: 6px 3px 4px 3px;
             text-align: center;
             background-color: #000000;
             color: #FFFFFF;
@@ -50,20 +59,20 @@
 
         /* 【上段】項目ラベル：サイズアップ＋純白＋極太化 */
         .label {
-            font-size: 12px; /* 10pxから12pxへ拡大 */
+            font-size: 12px;
             font-weight: 900;
-            color: #FFFFFF !important; /* グレーを廃止し純白に固定 */
+            color: #FFFFFF !important;
             white-space: nowrap;
             line-height: 1.0;
-            letter-spacing: -0.5px; /* 横にハミ出さないよう微調整 */
-            text-shadow: 1px 1px 0px #000000; /* LEDの光にじみ防止 */
+            letter-spacing: -0.5px;
+            text-shadow: 1px 1px 0px #000000;
         }
         .text-dark { color: #000000 !important; text-shadow: none !important; }
 
         /* 【上段と中段の間】切り抜いた顔写真エリア */
         .avatar-box {
             width: 100%;
-            height: 44px; /* 42pxから44pxへわずかに拡大 */
+            height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -75,7 +84,7 @@
             width: auto;
             object-fit: contain;
             border-radius: 50%;
-            filter: brightness(1.65) drop-shadow(0px 1px 1px rgba(0,0,0,0.8)); /* キャラをクッキリ浮き立たせる */
+            filter: brightness(1.65) drop-shadow(0px 1px 1px rgba(0,0,0,0.8));
         }
         .no-filter {
             filter: drop-shadow(0px 1px 1px rgba(0,0,0,0.8)) !important;
@@ -91,7 +100,7 @@
             margin-bottom: 2px;
         }
         .value {
-            font-size: 34px; /* 32pxから34pxへ最大化 */
+            font-size: 34px;
             font-family: 'Arial Black', 'Impact', sans-serif;
             font-weight: 900;
             line-height: 1.0;
@@ -107,12 +116,12 @@
         /* 【下段】文言 ＋ 時計エリアのレイアウト大改造 */
         .bottom-row {
             display: flex;
-            justify-content: center; /* 中央寄せベースに変更 */
+            justify-content: center;
             align-items: center;
-            width: 100%; /* 横幅いっぱいに使って文字サイズを稼ぐ */
+            width: 100%;
             background-color: rgba(0, 0, 0, 0.5);
             border-radius: 2px;
-            height: 22px; /* 18pxから22pxへ縦幅を拡張 */
+            height: 22px;
             position: relative;
         }
         .bottom-dark {
@@ -121,7 +130,7 @@
         
         /* 警戒文言：主役として中央にデカデカと配置 */
         .status-text {
-            font-size: 14px; /* 11pxから14pxへ大幅サイズアップ！ */
+            font-size: 14px;
             font-weight: 900;
             font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
             white-space: nowrap;
@@ -134,13 +143,13 @@
             position: absolute;
             right: 3px;
             bottom: 2px;
-            font-size: 8px; /* 認識できる限界まで小さく */
+            font-size: 8px;
             font-family: 'Arial Black', monospace;
-            font-weight: 900; /* 極太化 */
+            font-weight: 900;
             white-space: nowrap;
             line-height: 1.0;
-            color: #FFFFFF !important; /* 純白 */
-            opacity: 0.8; /* 主役の文言を邪魔しないようわずかに透過 */
+            color: #FFFFFF !important;
+            opacity: 0.8;
         }
         .time-dark { color: #000000 !important; }
         .time-light { color: #FFFFFF !important; }
@@ -187,7 +196,6 @@
             <div class="value-container">
                 <span class="value" id="val-kion">--.-</span><span class="unit">℃</span>
             </div>
-            <div class="block data-block">
             <div class="bottom-row" id="bottom-kion">
                 <span class="status-text" id="status-kion">――</span>
                 <span class="time-stamp data-time">00:00:00</span>
@@ -226,4 +234,112 @@
     </div>
 
     <script>
-        // （※ここから下のJavaScriptコードは既存のものをそのまま残してください！）
+        // 🌟 ここから「GitHub Actions連動型」の最新スクリプト
+        
+        // URLパラメータから CorpID と LoID を自動取得（例: index.html?CorpID=18016&LoID=2480）
+        const urlParams = new URLSearchParams(window.location.search);
+        const corpId = urlParams.get('CorpID') || '18016'; // テスト用デフォルト値
+        const loId = urlParams.get('LoID') || '2480';     // テスト用デフォルト値
+
+        // 自分自身のリポジトリ内の JSON ファイルを狙い撃ち
+        const dataUrl = `data/${corpId}/${loId}.json`;
+
+        function updateClock() {
+            const now = new Date();
+            const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            document.querySelectorAll('.data-time').forEach(el => el.textContent = timeString);
+        }
+
+        async function updateSignageData() {
+            try {
+                const timeStamp = new Date().getTime();
+                // キャッシュを完全に殺して最新の保存データをフェッチ
+                const response = await fetch(`${dataUrl}?r=${timeStamp}`, { cache: 'no-store' });
+                if (!response.ok) throw new Error('データ未生成、または通信エラー');
+                
+                const data = await response.json();
+                
+                // 数値の流し込み（文字が綺麗に収まるようNumber化して固定少数表示）
+                document.getElementById('val-wbgt').textContent = data.wbgt !== "0.0" ? Number(data.wbgt).toFixed(1) : '--.-';
+                document.getElementById('val-kion').textContent = data.kion !== "0.0" ? Number(data.kion).toFixed(1) : '--.-';
+                document.getElementById('val-koku').textContent = data.koku !== "0.0" ? Number(data.koku).toFixed(1) : '--.-';
+                document.getElementById('val-shitu').textContent = data.shitu !== "0" ? Number(data.shitu).toFixed(0) : '--';
+
+                // 背景色と文字色の設定テーブル
+                const themeMap = {
+                    'danger':    { bg: '#A63A3A', text: '#FFFFFF', txt: '危 険',    img: '1.png', dark: false, filter: true },
+                    'severe':    { bg: '#7C3E1E', text: '#FFFFFF', txt: '厳重警戒',  img: '2.png', dark: false, filter: true },
+                    'warning':   { bg: '#B7732D', text: '#FFFFFF', txt: '警 戒',    img: '3.png', dark: false, filter: true },
+                    'attention': { bg: '#C4F941', text: '#000000', txt: '注 意',    img: '4.png', dark: true,  filter: false },
+                    'safe':      { bg: '#4D666D', text: '#FFFFFF', txt: 'ほぼ安全',  img: '5.png', dark: false, filter: true }
+                };
+
+                const theme = themeMap[data.level] || themeMap['safe'];
+
+                // 画像の更新とフィルター処理
+                const imgIds = ['img-wbgt', 'img-kion', 'img-koku', 'img-shitu'];
+                imgIds.forEach(id => {
+                    const imgEl = document.getElementById(id);
+                    if (imgEl) {
+                        imgEl.src = theme.img;
+                        if (theme.filter) {
+                            imgEl.classList.remove('no-filter');
+                        } else {
+                            imgEl.classList.add('no-filter');
+                        }
+                    }
+                });
+
+                // 各種文言・ステータスの更新
+                document.getElementById('status-wbgt').textContent = theme.txt;
+                document.getElementById('status-kion').textContent = theme.txt;
+                document.getElementById('status-koku').textContent = theme.txt;
+                document.getElementById('status-shitu').textContent = theme.txt;
+
+                // 全ブロックの色の一括コントロール
+                document.querySelectorAll('.data-block').forEach(b => {
+                    b.style.backgroundColor = theme.bg;
+                    b.style.color = theme.text;
+                });
+
+                // 注意（黄緑）の時だけ最上段のラベル文字を黒にして視認性を確保
+                document.querySelectorAll('.data-label').forEach(l => {
+                    if (theme.dark) {
+                        l.classList.add('text-dark');
+                    } else {
+                        l.classList.remove('text-dark');
+                    }
+                });
+
+                // 下段エリアの明暗反転コントロール
+                document.querySelectorAll('.bottom-row').forEach(row => {
+                    if (theme.dark) {
+                        row.classList.add('bottom-dark');
+                    } else {
+                        row.classList.remove('bottom-dark');
+                    }
+                });
+
+                // 時計の文字色コントロール
+                document.querySelectorAll('.data-time').forEach(t => {
+                    if (theme.dark) {
+                        t.className = 'time-stamp data-time time-dark';
+                    } else {
+                        t.className = 'time-stamp data-time time-light';
+                    }
+                });
+
+            } catch (error) {
+                console.error('サイネージデータ読み込み失敗:', error);
+            }
+        }
+
+        // 初期起動とタイマー
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        updateSignageData();
+        setInterval(updateSignageData, 10000); // 10秒ごとに自前のJSONデータを監視
+    </script>
+</body>
+</html>
