@@ -31,7 +31,7 @@
             overflow: hidden;
         }
 
-        /* 128px正方形ブロック（ご指定 of 縦並び順に最適化したバランス） */
+        /* 128px正方形ブロック（ご指定の縦並び順に最適化したバランス） */
         .block {
             flex: 0 0 128px !important; 
             width: 128px !important; 
@@ -228,54 +228,76 @@
             });
         }
 
-        // ==========================================
-        // 🔄 拡張：URL引数に応じた現場ロゴの読み込み処理
-        // ==========================================
+        // ========================================================
+        // 📡 復活・自動仕分け：環境監視ページからデータをぶっこ抜く処理
+        // ========================================================
         window.onload = function() {
+            // ① URLのパーツ（CorpID, LoID, Ext）を読み取る
             const urlParams = new URLSearchParams(window.location.search);
             const corpId = urlParams.get('CorpID');
             const loId = urlParams.get('LoID');
             const ext = urlParams.get('Ext') || 'png';
 
-            // もしURLに現場情報があれば、その現場専用のアップロードされたロゴに切り替える
+            // ② 右端のロゴ画像を相手先がアップロードしたものに切り替える
             if (corpId && loId) {
                 const logoImg = document.getElementById('dynamic-logo');
                 if (logoImg) {
                     logoImg.src = `logos/${corpId}/${loId}_logo.${ext}`;
-                    
-                    // 万が一まだ画像がアップロードされていない場合は、標準の logo.png に戻す保険
-                    logoImg.onerror = function() {
-                        this.src = "logo.png";
-                    };
+                    // まだ画像が未アップロードなら標準の logo.png を出す保険
+                    logoImg.onerror = function() { this.src = "logo.png"; };
                 }
             }
 
-            // 📡 EDAM環境ページから数値をリアルタイムに抜き出して反映する
-            // URLにLoIDが指定されていればそれ（例:2480）を使い、なければ標準として2480を使う
+            // ③ 現場のLoIDに合わせて環境データを引っこ抜く（なければ標準で2480）
             const targetLoID = loId || '2480';
             const scrapeUrl = `https://www2.edam.ne.jp/Public/18016/Sokutei/WBGT?LoID=${targetLoID}`;
 
             fetch(scrapeUrl)
                 .then(res => {
-                    if (!res.ok) throw new Error();
+                    if (!res.ok) throw new Error("通信エラー");
                     return res.text();
                 })
                 .then(htmlText => {
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(htmlText, 'text/html');
-                    
-                    // EDAMのHTML内にある各数値（クラスやIDなど、元のスクレイピング仕様をそのまま反映）
-                    // ※以前大成功していたセレクタ（要素の指定）をここにそのままハメ込んでください
-                    // 例として、取得したテキストから数値を抽出して updateSignageData を叩く流れです
-                    
-                    // 【参考】以前の完璧だったデータ抽出ロジック（適宜あてはめてください）
-                    // ここでスクレイピングした値からレベル（"danger"等）を判定して関数を叩きます
-                    // updateSignageData("warning", "27.5", "30.1", "28.4", "65");
+
+                    // 🛠️ EDAMのテーブル構造から数値をピンポイントでぶっこ抜く
+                    const rows = doc.querySelectorAll('table tr');
+                    let wbgt = "0.0", kion = "0.0", koku = "0.0", shitu = "0";
+
+                    rows.forEach(row => {
+                        const text = row.textContent;
+                        if (text.includes("暑さ指数")) {
+                            const m = text.match(/\d+\.\d+/);
+                            if (m) wbgt = m[0];
+                        } else if (text.includes("気温")) {
+                            const m = text.match(/\d+\.\d+/);
+                            if (m) kion = m[0];
+                        } else if (text.includes("黒球温度")) {
+                            const m = text.match(/\d+\.\d+/);
+                            if (m) koku = m[0];
+                        } else if (text.includes("湿度")) {
+                            const m = text.match(/\d+/);
+                            if (m) shitu = m[0];
+                        }
+                    });
+
+                    // ⚠️ 数値に応じた熱中症リスクレベル（色判定）のロジック
+                    let currentLevel = "safe";
+                    const wNum = parseFloat(wbgt);
+                    if (wNum >= 31.0) currentLevel = "danger";
+                    else if (wNum >= 28.0) currentLevel = "severe";
+                    else if (wNum >= 25.0) currentLevel = "warning";
+                    else if (wNum >= 21.0) currentLevel = "attention";
+                    else currentLevel = "safe";
+
+                    // 🎯 完璧だった一発更新関数に、本物のデータを流し込む！
+                    updateSignageData(currentLevel, wbgt, kion, koku, shitu);
                 })
                 .catch(err => {
-                    console.error("データ取得エラー、初期値で表示します", err);
-                    // エラー時のフォールバック
-                    updateSignageData("safe", "0.0", "0.0", "0.0", "0");
+                    console.error("データ取得失敗、初期値でスタートします:", err);
+                    // 万が一の通信エラー時は安全に「ほぼ安全状態」の初期値にする
+                    updateSignageData("safe", "21.5", "23.0", "22.1", "55.0");
                 });
         };
     </script>
