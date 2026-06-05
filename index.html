@@ -228,29 +228,18 @@
             });
         }
 
-        // ========================================================
-        // 📡 復活・自動仕分け：環境監視ページからデータをぶっこ抜く処理
-        // ========================================================
-        window.onload = function() {
-            // ① URLのパーツ（CorpID, LoID, Ext）を読み取る
-            const urlParams = new URLSearchParams(window.location.search);
-            const corpId = urlParams.get('CorpID');
-            const loId = urlParams.get('LoID');
-            const ext = urlParams.get('Ext') || 'png';
+        // URLから引数を取得
+        const urlParams = new URLSearchParams(window.location.search);
+        const corpId = urlParams.get('CorpID');
+        const loId = urlParams.get('LoID');
+        const ext = urlParams.get('Ext') || 'png';
 
-            // ② 右端のロゴ画像を相手先がアップロードしたものに切り替える
-            if (corpId && loId) {
-                const logoImg = document.getElementById('dynamic-logo');
-                if (logoImg) {
-                    logoImg.src = `logos/${corpId}/${loId}_logo.${ext}`;
-                    // まだ画像が未アップロードなら標準の logo.png を出す保険
-                    logoImg.onerror = function() { this.src = "logo.png"; };
-                }
-            }
-
-            // ③ 現場のLoIDに合わせて環境データを引っこ抜く（なければ標準で2480）
+        // 📡 環境監視ページからデータをぶっこ抜いて更新するメイン関数
+        function refreshEnvironmentalData() {
             const targetLoID = loId || '2480';
-            const scrapeUrl = `https://www2.edam.ne.jp/Public/18016/Sokutei/WBGT?LoID=${targetLoID}`;
+            // キャッシュ破棄用のタイムスタンプ
+            const cacheBuster = new Date().getTime();
+            const scrapeUrl = `https://www2.edam.ne.jp/Public/18016/Sokutei/WBGT?LoID=${targetLoID}&_=${cacheBuster}`;
 
             fetch(scrapeUrl)
                 .then(res => {
@@ -261,7 +250,7 @@
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(htmlText, 'text/html');
 
-                    // 🛠️ EDAMのテーブル構造から数値をピンポイントでぶっこ抜く
+                    // EDAMのテーブル構造から数値をぶっこ抜く
                     const rows = doc.querySelectorAll('table tr');
                     let wbgt = "0.0", kion = "0.0", koku = "0.0", shitu = "0";
 
@@ -282,7 +271,7 @@
                         }
                     });
 
-                    // ⚠️ 数値に応じた熱中症リスクレベル（色判定）のロジック
+                    // 熱中症リスクレベル（色判定）のロジック
                     let currentLevel = "safe";
                     const wNum = parseFloat(wbgt);
                     if (wNum >= 31.0) currentLevel = "danger";
@@ -291,14 +280,34 @@
                     else if (wNum >= 21.0) currentLevel = "attention";
                     else currentLevel = "safe";
 
-                    // 🎯 完璧だった一発更新関数に、本物のデータを流し込む！
+                    // 最新の本物のデータを流し込む！
                     updateSignageData(currentLevel, wbgt, kion, koku, shitu);
                 })
                 .catch(err => {
-                    console.error("データ取得失敗、初期値でスタートします:", err);
-                    // 万が一の通信エラー時は安全に「ほぼ安全状態」の初期値にする
+                    console.error("データ取得失敗:", err);
+                    // 通信エラー時は安全な初期設定値を維持
                     updateSignageData("safe", "21.5", "23.0", "22.1", "55.0");
                 });
+        }
+
+        // ========================================================
+        // 🚀 初回起動および、定期自動更新タイマーの設定
+        // ========================================================
+        window.onload = function() {
+            // 右端のロゴ画像を相手先がアップロードしたものに切り替える（初回のみ）
+            if (corpId && loId) {
+                const logoImg = document.getElementById('dynamic-logo');
+                if (logoImg) {
+                    logoImg.src = `logos/${corpId}/${loId}_logo.${ext}`;
+                    logoImg.onerror = function() { this.src = "logo.png"; };
+                }
+            }
+
+            // 1回目：即座にデータを取ってくる
+            refreshEnvironmentalData();
+
+            // 2回目以降：1分ごと（60000ミリ秒）に自動でデータを抜き出し直して画面を書き換える
+            setInterval(refreshEnvironmentalData, 60000); 
         };
     </script>
 </body>
