@@ -177,7 +177,7 @@
     </div>
 
     <script>
-        /* 1秒ごとに時計を更新（MM/DD hh:mm:ss） */
+        /* 1秒ごとに時計を更新 */
         function updateClock() {
             const now = new Date();
             const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -188,28 +188,24 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        /* 🎯 各リスクレベルに応じたデザインの定義設定 */
+        /* 各リスクレベルに応じたデザインの定義設定 */
         const levelDesigns = {
-            "danger":    { bgColor: "#FF5050", txtColor: "#111", txt: "危 険", faceIndex: 0 },   // 1.png
-            "severe":    { bgColor: "#FFB366", txtColor: "#111", txt: "厳重警戒", faceIndex: 1 }, // 2.png
-            "warning":   { bgColor: "#FFFF80", txtColor: "#111", txt: "警 戒", faceIndex: 2 },   // 3.png
-            "attention": { bgColor: "#B3FF99", txtColor: "#111", txt: "注 意", faceIndex: 3 },   // 4.png
-            "safe":      { bgColor: "#B2F1FF", txtColor: "#111", txt: "ほぼ安全", faceIndex: 4 }    // 5.png
+            "danger":    { bgColor: "#FF5050", txtColor: "#111", txt: "危 険", faceIndex: 0 },
+            "severe":    { bgColor: "#FFB366", txtColor: "#111", txt: "厳重警戒", faceIndex: 1 },
+            "warning":   { bgColor: "#FFFF80", txtColor: "#111", txt: "警 戒", faceIndex: 2 },
+            "attention": { bgColor: "#B3FF99", txtColor: "#111", txt: "注 意", faceIndex: 3 },
+            "safe":      { bgColor: "#B2F1FF", txtColor: "#111", txt: "ほぼ安全", faceIndex: 4 }
         };
 
-        /**
-         * 🎯 本番用：システム側からデータを流し込んで画面を一発更新する関数
-         */
+        /* 画面表示をガサッと一発で書き換える関数 */
         function updateSignageData(currentLevel, wbgt, kion, koku, shitu) {
             const d = levelDesigns[currentLevel] || levelDesigns["safe"];
             
-            // 1. 数値の書き換え
             document.getElementById('val-wbgt').textContent = wbgt;
             document.getElementById('val-kion').textContent = kion;
             document.getElementById('val-koku').textContent = koku;
             document.getElementById('val-shitu').textContent = shitu;
 
-            // 2. 背景色と文字色の同期適用
             document.querySelectorAll('.data-block').forEach(b => {
                 b.style.backgroundColor = d.bgColor;
                 b.style.color = d.txtColor;
@@ -218,28 +214,26 @@
             document.querySelectorAll('.data-label').forEach(l => l.className = 'label data-label text-dark');
             document.querySelectorAll('.bottom-row').forEach(row => row.className = 'bottom-row bottom-dark');
 
-            // 3. 顔アイコンのインデックス切り替え（超高速裏読み仕様）
             document.querySelectorAll('.circle-stage').forEach(stage => {
                 const imgs = stage.querySelectorAll('img');
                 imgs.forEach(img => img.classList.remove('active'));
-                if(imgs[d.faceIndex]) {
-                    imgs[d.faceIndex].classList.add('active');
-                }
+                if(imgs[d.faceIndex]) imgs[d.faceIndex].classList.add('active');
             });
         }
 
-        // URLから引数を取得
+        // ========================================================
+        // 📡 URLの引数を100%連動させて、EDAMから自動でデータを拾う処理
+        // ========================================================
         const urlParams = new URLSearchParams(window.location.search);
-        const corpId = urlParams.get('CorpID');
-        const loId = urlParams.get('LoID');
+        const corpId = urlParams.get('CorpID') || '18016'; // 引数がない時の保険
+        const loId = urlParams.get('LoID') || '2480';     // 引数がない時の保険
         const ext = urlParams.get('Ext') || 'png';
 
-        // 📡 環境監視ページからデータをぶっこ抜いて更新するメイン関数
-        function refreshEnvironmentalData() {
-            const targetLoID = loId || '2480';
-            // キャッシュ破棄用のタイムスタンプ
+        function fetchLatestData() {
+            // 💡 対策：URLの中身（CorpIDとLoID）を、引数で渡されたものに完全自動置換！
+            // 末尾にタイムスタンプを付けてキャッシュも完全に破壊します
             const cacheBuster = new Date().getTime();
-            const scrapeUrl = `https://www2.edam.ne.jp/Public/18016/Sokutei/WBGT?LoID=${targetLoID}&_=${cacheBuster}`;
+            const scrapeUrl = `https://www2.edam.ne.jp/Public/${corpId}/Sokutei/WBGT?LoID=${loId}&_=${cacheBuster}`;
 
             fetch(scrapeUrl)
                 .then(res => {
@@ -249,66 +243,57 @@
                 .then(htmlText => {
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(htmlText, 'text/html');
-
-                    // EDAMのテーブル構造から数値をぶっこ抜く
                     const rows = doc.querySelectorAll('table tr');
+                    
                     let wbgt = "0.0", kion = "0.0", koku = "0.0", shitu = "0";
 
                     rows.forEach(row => {
                         const text = row.textContent;
                         if (text.includes("暑さ指数")) {
-                            const m = text.match(/\d+\.\d+/);
-                            if (m) wbgt = m[0];
+                            const m = text.match(/\d+\.\d+/); if (m) wbgt = m[0];
                         } else if (text.includes("気温")) {
-                            const m = text.match(/\d+\.\d+/);
-                            if (m) kion = m[0];
+                            const m = text.match(/\d+\.\d+/); if (m) kion = m[0];
                         } else if (text.includes("黒球温度")) {
-                            const m = text.match(/\d+\.\d+/);
-                            if (m) koku = m[0];
+                            const m = text.match(/\d+\.\d+/); if (m) koku = m[0];
                         } else if (text.includes("湿度")) {
-                            const m = text.match(/\d+/);
-                            if (m) shitu = m[0];
+                            const m = text.match(/\d+/); if (m) shitu = m[0];
                         }
                     });
 
-                    // 熱中症リスクレベル（色判定）のロジック
+                    // リスクレベル判定
                     let currentLevel = "safe";
                     const wNum = parseFloat(wbgt);
                     if (wNum >= 31.0) currentLevel = "danger";
                     else if (wNum >= 28.0) currentLevel = "severe";
                     else if (wNum >= 25.0) currentLevel = "warning";
                     else if (wNum >= 21.0) currentLevel = "attention";
-                    else currentLevel = "safe";
 
-                    // 最新の本物のデータを流し込む！
+                    // 画面を最新データで更新
                     updateSignageData(currentLevel, wbgt, kion, koku, shitu);
                 })
                 .catch(err => {
                     console.error("データ取得失敗:", err);
-                    // 通信エラー時は安全な初期設定値を維持
-                    updateSignageData("safe", "21.5", "23.0", "22.1", "55.0");
                 });
         }
 
-        // ========================================================
-        // 🚀 初回起動および、定期自動更新タイマーの設定
-        // ========================================================
-        window.onload = function() {
-            // 右端のロゴ画像を相手先がアップロードしたものに切り替える（初回のみ）
-            if (corpId && loId) {
-                const logoImg = document.getElementById('dynamic-logo');
-                if (logoImg) {
-                    logoImg.src = `logos/${corpId}/${loId}_logo.${ext}`;
-                    logoImg.onerror = function() { this.src = "logo.png"; };
-                }
+        // 🚀 画面が読み込まれた時の処理
+        window.addEventListener('DOMContentLoaded', () => {
+            // 1. ロゴ画像をURL引数に合わせて切り替え
+            const logoImg = document.getElementById('dynamic-logo');
+            if (logoImg) {
+                logoImg.src = `logos/${corpId}/${loId}_logo.${ext}`;
+                logoImg.onerror = function() {
+                    this.src = `logos/${corpId}/${loId}.${ext}`;
+                    this.onerror = function() { this.src = "logo.png"; };
+                };
             }
 
-            // 1回目：即座にデータを取ってくる
-            refreshEnvironmentalData();
+            // 2. データを即座に1回拾いにいく
+            fetchLatestData();
 
-            // 2回目以降：1分ごと（60000ミリ秒）に自動でデータを抜き出し直して画面を書き換える
-            setInterval(refreshEnvironmentalData, 60000); 
-        };
+            // 3. 以後、1 minute (60秒) ごとに自動で最新の数値を拾い直す
+            setInterval(fetchLatestData, 60000);
+        });
     </script>
 </body>
 </html>
