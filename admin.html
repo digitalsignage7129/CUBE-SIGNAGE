@@ -13,11 +13,13 @@
         input[type="text"], input[type="file"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
         button { width: 100%; padding: 12px; background: #007bff; color: #fff; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; }
         button:hover { background: #0056b3; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
         .result-box { display: none; margin-top: 30px; padding-top: 25px; border-top: 2px dashed #ddd; }
         .result-title { font-weight: bold; color: #28a745; text-align: center; margin-bottom: 15px; }
         .nav-btn { display: block; text-align: center; padding: 12px; margin-bottom: 10px; border-radius: 4px; font-weight: bold; text-decoration: none; font-size: 14px; }
         .btn-primary { background-color: #28a745; color: white; }
-        .url-text { background: #eee; padding: 8px; font-size: 11px; border-radius: 4px; word-break: break-all; font-family: monospace; margin-bottom: 15px; max-height: 60px; overflow-y: auto; }
+        .url-text { background: #eee; padding: 8px; font-size: 13px; border-radius: 4px; word-break: break-all; font-family: monospace; margin-bottom: 15px; }
+        #status-msg { text-align: center; font-weight: bold; color: #007bff; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -38,56 +40,103 @@
         
         <div class="form-group">
             <label for="logoFile">③ 表示するロゴ画像を選択（JPG / PNG）</label>
-            <!-- 🎯 文字入力ではなく、本物のファイル選択に変更 -->
             <input type="file" id="logoFile" accept="image/*">
         </div>
         
-        <button type="button" onclick="generateUrls()">設定を確定してURLを発行する</button>
+        <button type="button" id="submit-btn" onclick="uploadToGitHub()">設定を確定してサーバーに保存</button>
+        <div id="status-msg"></div>
     </div>
 
-    <!-- 結果出力エリア -->
     <div id="result-area" class="result-box">
-        <div class="result-title">✨ URLの発行が完了しました！</div>
+        <div class="result-title">✨ サーバー保存 ＆ URL発行完了！</div>
         
-        <label>🖥️ サイネージ登録用URL（これをコピーしてサイネージ端末へ）</label>
+        <label>🖥️ サイネージ登録用URL（端末へ登録するURL）</label>
         <div class="url-text" id="display-url-text"></div>
         <a href="#" id="btn-signage" class="nav-btn btn-primary" target="_blank">このまま画面表示を確認する</a>
     </div>
 </div>
 
 <script>
-    let uploadedLogoData = 'logo.png'; // デフォルト値
+    // 🎯 ここにご自身の環境の情報を入力してください
+    const GITHUB_TOKEN = "ここにあなたのFine-grainedトークンを貼る";
+    const REPO_OWNER = "あなたのGitHubユーザー名";
+    const REPO_NAME = "あなたのリポジトリ名（例: suminoe-wbgt）";
 
-    // 画像が選択されたら、自動的に「長い文字列（Base64）」に変換して記憶する処理
-    document.getElementById('logoFile').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+    async function uploadToGitHub() {
+        const corpId = document.getElementById('corpId').value.trim();
+        const loId = document.getElementById('loId').value.trim();
+        const fileInput = document.getElementById('logoFile');
+        const file = fileInput.files[0];
+        const msgDiv = document.getElementById('status-msg');
+        const btn = document.getElementById('submit-btn');
 
+        if (!corpId || !loId || !file) {
+            alert("すべての項目を入力・選択してください。");
+            return;
+        }
+
+        btn.disabled = true;
+        msgDiv.textContent = "サーバーにフォルダを作成して画像を保存中...";
+
+        // 画像ファイルをBase64（テキスト）に変換して、GitHubが受け取れる形にする
         const reader = new FileReader();
-        reader.onload = function(event) {
-            uploadedLogoData = event.target.result; // 画像をテキスト化したもの
-        };
         reader.readAsDataURL(file);
-    });
+        reader.onload = async function () {
+            const base64Content = reader.result.split(',')[1]; // 純粋なデータ部分のみ抽出
+            
+            // 🎯 規則性に基づいた保存パスを決定 (例: logos/00574/2451_logo.png)
+            const fileExt = file.name.split('.').pop();
+            const filePath = `logos/${corpId}/${loId}_logo.${fileExt}`;
+            
+            // GitHub APIのURL
+            const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${filePath}`;
 
-    function generateUrls() {
-        const corpId = document.getElementById('corpId').value.trim() || '00574';
-        const loId = document.getElementById('loId').value.trim() || '2451';
+            try {
+                // すでに同じファイルがあるか念のためチェック（上書き用の仕様）
+                let sha = "";
+                const checkRes = await fetch(url, {
+                    headers: { "Authorization": `Bearer ${GITHUB_TOKEN}` }
+                });
+                if (checkRes.ok) {
+                    const checkData = await checkRes.json();
+                    sha = checkData.sha; // 上書きには既存ファイルのshaコードが必要
+                }
 
-        // 共通のベースパスを取得
-        const basePath = window.location.href.split('?')[0].replace('admin.html', '');
-        
-        // 画像データを含んだ規則性のあるURLを完成させる（エンコードして安全なURLに変換）
-        const signageUrl = `${basePath}index.html?CorpID=${corpId}&LoID=${loId}&Logo=${encodeURIComponent(uploadedLogoData)}`;
+                // GitHubへ直接アップロード（保存）命令を出す
+                const res = await fetch(url, {
+                    method: "PUT",
+                    headers: {
+                        "Authorization": `Bearer ${GITHUB_TOKEN}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        message: `Upload logo for Corp:${corpId} LoID:${loId}`,
+                        content: base64Content,
+                        sha: sha // 初めてなら空、上書きなら既存のsha
+                    })
+                });
 
-        // 画面に反映
-        document.getElementById('display-url-text').textContent = signageUrl;
-        document.getElementById('btn-signage').href = signageUrl;
-
-        // 結果を表示
-        document.getElementById('result-area').style.display = 'block';
+                if (res.ok) {
+                    msgDiv.textContent = "保存成功！";
+                    
+                    // サイネージ登録用の【極短URL】を生成
+                    const basePath = window.location.href.split('?')[0].replace('admin.html', '');
+                    const signageUrl = `${basePath}index.html?CorpID=${corpId}&LoID=${loId}&Ext=${fileExt}`;
+                    
+                    document.getElementById('display-url-text').textContent = signageUrl;
+                    document.getElementById('btn-signage').href = signageUrl;
+                    document.getElementById('result-area').style.display = 'block';
+                } else {
+                    throw new Error("Upload failed");
+                }
+            } catch (err) {
+                alert("GitHubへの保存に失敗しました。トークンやリポジトリ名を確認してください。");
+                console.error(err);
+            } finally {
+                btn.disabled = false;
+            }
+        };
     }
 </script>
-
 </body>
 </html>
