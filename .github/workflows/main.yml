@@ -16,12 +16,21 @@ jobs:
 
       - name: Process each site from text file
         run: |
-          touch sites.txt
+          # sites.txt が無い、または空なら処理を安全に終了するガード
+          if [ ! -s sites.txt ]; then
+            echo "sites.txt is empty or does not exist. Skipping."
+            exit 0
+          fi
           
-          while IFS=, read -r corp_id lo_id || [ -n "$corp_id" ]; do
+          # 末尾に改行がない不完全なファイルでも100%安全に読み切るループ構造
+          cat sites.txt | while IFS=, read -r corp_id lo_id || [ -n "$corp_id" ]; do
+            # 空行やコメント行（#）を徹底排除
+            corp_id=$(echo "$corp_id" | tr -d '\r\n\t ')
+            lo_id=$(echo "$lo_id" | tr -d '\r\n\t ')
             [[ -z "$corp_id" || "$corp_id" =~ ^# ]] && continue
             
-            echo "Fetching data for CorpID: $corp_id, LoID: $lo_id"
+            echo "============================================="
+            echo "Processing CorpID: [${corp_id}], LoID: [${lo_id}]"
             mkdir -p "data/$corp_id"
 
             # EDAMから生データを取得
@@ -39,7 +48,7 @@ jobs:
             if [[ -z "$KOKU" || "$KOKU" == "null" ]]; then KOKU="0.0"; fi
             if [[ -z "$SHITU" || "$SHITU" == "null" ]]; then SHITU="0"; fi
 
-            # 🎯 awkを使ってエラー（Exit code 5）を絶対に回避する安全な数値比較
+            # awkを使った安全な数値比較
             LEVEL="safe"
             if (( $(echo "$WBGT 31.0" | awk '{print ($1 >= $2)}') )); then LEVEL="danger";
             elif (( $(echo "$WBGT 28.0" | awk '{print ($1 >= $2)}') )); then LEVEL="severe";
@@ -48,9 +57,12 @@ jobs:
 
             # JSONファイルを生成
             echo "{\"wbgt\":\"$WBGT\",\"kion\":\"$KION\",\"koku\":\"$KOKU\",\"shitu\":\"$SHITU\",\"level\":\"$LEVEL\"}" > "data/${corp_id}/${lo_id}.json"
-            echo "Successfully generated: data/${corp_id}/${lo_id}.json (WBGT: $WBGT)"
+            echo "👉 Successfully generated data/${corp_id}/${lo_id}.json"
 
-          done < sites.txt
+          done
+          
+          # ループ全体が正常終了したことを明示的に伝える
+          exit 0
 
       - name: Commit and Push changes
         run: |
