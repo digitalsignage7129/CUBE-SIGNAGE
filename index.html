@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT環境モニター（超高視認性版）</title>
+    <title>WBGT環境モニター（文字最大化版）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -45,7 +45,7 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between; 
-            padding: 6px 3px 4px 3px;
+            padding: 7px 3px 4px 3px; /* 上下の余白を微調整 */
             text-align: center;
             background-color: #000000;
             color: #FFFFFF;
@@ -57,9 +57,9 @@
             border-right: none;
         }
 
-        /* 【上段】項目ラベル：サイズアップ＋純白＋極太化 */
+        /* 【上段】項目ラベル：限界まで大きく太く修正！ */
         .label {
-            font-size: 12px;
+            font-size: 14px; /* 12pxから14pxへさらに拡大！ */
             font-weight: 900;
             color: #FFFFFF !important;
             white-space: nowrap;
@@ -69,14 +69,14 @@
         }
         .text-dark { color: #000000 !important; text-shadow: none !important; }
 
-        /* 【上段と中段の間】切り抜いた顔写真エリア */
+        /* 【上段と中段の間】切り抜いた顔写真エリア：一回りコンパクトに縮小 */
         .avatar-box {
             width: 100%;
-            height: 44px;
+            height: 32px; /* 44pxから32pxへ縮小して文字スペースを捻出 */
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-top: 2px;
+            margin-top: 1px;
             overflow: hidden;
         }
         .avatar-img {
@@ -90,14 +90,14 @@
             filter: drop-shadow(0px 1px 1px rgba(0,0,0,0.8)) !important;
         }
 
-        /* 【中段】数値表示：圧倒的王者の太さ */
+        /* 【中段】数値表示 */
         .value-container {
             display: flex;
             align-items: baseline;
             justify-content: center;
             line-height: 1.0;
             margin-top: 1px;
-            margin-bottom: 2px;
+            margin-bottom: 1px;
         }
         .value {
             font-size: 34px;
@@ -113,7 +113,7 @@
             line-height: 1.0;
         }
 
-        /* 【下段】文言 ＋ 時計エリアのレイアウト大改造 */
+        /* 【下段】文言 ＋ 時計エリア */
         .bottom-row {
             display: flex;
             justify-content: center;
@@ -121,14 +121,14 @@
             width: 100%;
             background-color: rgba(0, 0, 0, 0.5);
             border-radius: 2px;
-            height: 22px;
+            height: 24px; /* 22pxから24pxへさらに縦幅を拡張 */
             position: relative;
         }
         .bottom-dark {
             background-color: rgba(255, 255, 255, 0.5) !important;
         }
         
-        /* 警戒文言：主役として中央にデカデカと配置 */
+        /* 警戒文言 */
         .status-text {
             font-size: 14px;
             font-weight: 900;
@@ -136,22 +136,23 @@
             white-space: nowrap;
             line-height: 1.0;
             letter-spacing: 0.5px;
+            margin-left: -25px; /* 右側の時計スペースを避けてやや左寄りに */
         }
         
-        /* 時計：右下隅に極太の最小サイズで配置（生存確認用） */
+        /* 【時計】サイズアップ＋極太化してガッツリ読めるように修正！ */
         .time-stamp {
             position: absolute;
-            right: 3px;
-            bottom: 2px;
-            font-size: 8px;
-            font-family: 'Arial Black', monospace;
-            font-weight: 900;
+            right: 4px;
+            bottom: 4px;
+            font-size: 11px; /* 8pxから11pxへ大幅拡大！ */
+            font-family: 'Arial Black', 'Impact', monospace;
+            font-weight: 900; /* 超極太 */
             white-space: nowrap;
             line-height: 1.0;
             color: #FFFFFF !important;
-            opacity: 0.8;
+            text-shadow: 1px 1px 0px #000000;
         }
-        .time-dark { color: #000000 !important; }
+        .time-dark { color: #000000 !important; text-shadow: none !important; }
         .time-light { color: #FFFFFF !important; }
 
         /* ⑤ ロゴ */
@@ -179,14 +180,14 @@
 
     <div class="signage-container">
         <div class="block data-block">
-            <div class="label data-label">暑さ指数 (WBGT)</div>
+            <div class="label data-label">暑さ指数(WBGT)</div>
             <div class="avatar-box"><img src="5.png" id="img-wbgt" class="avatar-img" alt="顔"></div>
             <div class="value-container">
                 <span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span>
             </div>
             <div class="bottom-row" id="bottom-wbgt">
                 <span class="status-text" id="status-wbgt">――</span>
-                <span class="time-stamp data-time">00:00:00</span>
+                <span class="time-stamp data-time">00:00</span>
             </div>
         </div>
 
@@ -198,7 +199,7 @@
             </div>
             <div class="bottom-row" id="bottom-kion">
                 <span class="status-text" id="status-kion">――</span>
-                <span class="time-stamp data-time">00:00:00</span>
+                <span class="time-stamp data-time">00:00</span>
             </div>
         </div>
 
@@ -210,7 +211,7 @@
             </div>
             <div class="bottom-row" id="bottom-koku">
                 <span class="status-text" id="status-koku">――</span>
-                <span class="time-stamp data-time">00:00:00</span>
+                <span class="time-stamp data-time">00:00</span>
             </div>
         </div>
 
@@ -222,7 +223,7 @@
             </div>
             <div class="bottom-row" id="bottom-shitu">
                 <span class="status-text" id="status-shitu">――</span>
-                <span class="time-stamp data-time">00:00:00</span>
+                <span class="time-stamp data-time">00:00</span>
             </div>
         </div>
 
@@ -234,38 +235,32 @@
     </div>
 
     <script>
-        // 🌟 ここから「GitHub Actions連動型」の最新スクリプト
-        
-        // URLパラメータから CorpID と LoID を自動取得（例: index.html?CorpID=18016&LoID=2480）
         const urlParams = new URLSearchParams(window.location.search);
-        const corpId = urlParams.get('CorpID') || '18016'; // テスト用デフォルト値
-        const loId = urlParams.get('LoID') || '2480';     // テスト用デフォルト値
+        const corpId = urlParams.get('CorpID') || '18016';
+        const loId = urlParams.get('LoID') || '2480';
 
-        // 自分自身のリポジトリ内の JSON ファイルを狙い撃ち
         const dataUrl = `data/${corpId}/${loId}.json`;
 
+        // 🎯 128ピッチの横幅に極太11px文字で秒まで入れると潰れるため、「時:分（17:05）」のデカ文字表示に変更！
         function updateClock() {
             const now = new Date();
-            const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             document.querySelectorAll('.data-time').forEach(el => el.textContent = timeString);
         }
 
         async function updateSignageData() {
             try {
                 const timeStamp = new Date().getTime();
-                // キャッシュを完全に殺して最新の保存データをフェッチ
                 const response = await fetch(`${dataUrl}?r=${timeStamp}`, { cache: 'no-store' });
-                if (!response.ok) throw new Error('データ未生成、または通信エラー');
+                if (!response.ok) throw new Error('データ通信エラー');
                 
                 const data = await response.json();
                 
-                // 数値の流し込み（文字が綺麗に収まるようNumber化して固定少数表示）
                 document.getElementById('val-wbgt').textContent = data.wbgt !== "0.0" ? Number(data.wbgt).toFixed(1) : '--.-';
                 document.getElementById('val-kion').textContent = data.kion !== "0.0" ? Number(data.kion).toFixed(1) : '--.-';
                 document.getElementById('val-koku').textContent = data.koku !== "0.0" ? Number(data.koku).toFixed(1) : '--.-';
                 document.getElementById('val-shitu').textContent = data.shitu !== "0" ? Number(data.shitu).toFixed(0) : '--';
 
-                // 背景色と文字色の設定テーブル
                 const themeMap = {
                     'danger':    { bg: '#A63A3A', text: '#FFFFFF', txt: '危 険',    img: '1.png', dark: false, filter: true },
                     'severe':    { bg: '#7C3E1E', text: '#FFFFFF', txt: '厳重警戒',  img: '2.png', dark: false, filter: true },
@@ -276,7 +271,6 @@
 
                 const theme = themeMap[data.level] || themeMap['safe'];
 
-                // 画像の更新とフィルター処理
                 const imgIds = ['img-wbgt', 'img-kion', 'img-koku', 'img-shitu'];
                 imgIds.forEach(id => {
                     const imgEl = document.getElementById(id);
@@ -290,19 +284,16 @@
                     }
                 });
 
-                // 各種文言・ステータスの更新
                 document.getElementById('status-wbgt').textContent = theme.txt;
                 document.getElementById('status-kion').textContent = theme.txt;
                 document.getElementById('status-koku').textContent = theme.txt;
                 document.getElementById('status-shitu').textContent = theme.txt;
 
-                // 全ブロックの色の一括コントロール
                 document.querySelectorAll('.data-block').forEach(b => {
                     b.style.backgroundColor = theme.bg;
                     b.style.color = theme.text;
                 });
 
-                // 注意（黄緑）の時だけ最上段のラベル文字を黒にして視認性を確保
                 document.querySelectorAll('.data-label').forEach(l => {
                     if (theme.dark) {
                         l.classList.add('text-dark');
@@ -311,7 +302,6 @@
                     }
                 });
 
-                // 下段エリアの明暗反転コントロール
                 document.querySelectorAll('.bottom-row').forEach(row => {
                     if (theme.dark) {
                         row.classList.add('bottom-dark');
@@ -320,7 +310,6 @@
                     }
                 });
 
-                // 時計の文字色コントロール
                 document.querySelectorAll('.data-time').forEach(t => {
                     if (theme.dark) {
                         t.className = 'time-stamp data-time time-dark';
@@ -330,16 +319,15 @@
                 });
 
             } catch (error) {
-                console.error('サイネージデータ読み込み失敗:', error);
+                console.error('データ読み込み失敗:', error);
             }
         }
 
-        // 初期起動とタイマー
         updateClock();
         setInterval(updateClock, 1000);
 
         updateSignageData();
-        setInterval(updateSignageData, 10000); // 10秒ごとに自前のJSONデータを監視
+        setInterval(updateSignageData, 10000);
     </script>
 </body>
 </html>
