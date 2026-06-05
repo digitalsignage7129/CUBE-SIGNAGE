@@ -30,22 +30,19 @@ jobs:
             echo "Processing CorpID: [${corp_id}], LoID: [${lo_id}]"
             mkdir -p "data/$corp_id"
 
-            # 🎯 一般的なブラウザ（Chrome等）のフリをしてデータを取得（弾かれるのを防ぐ）
-            DATA_JSON=$(curl -sL -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" "https://www2.edam.ne.jp/Public/${corp_id}/Sokutei/GetLatestData?LoID=${lo_id}")
+            # キャッシュを回避するためのタイムスタンプを生成
+            TIMESTAMP=$(date +%s)
+
+            # 🎯 突き止めた最新の正しいURL構造でデータを取得
+            DATA_JSON=$(curl -sL -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" "https://www2.edam.ne.jp/Json/WBGTNumData/${lo_id}?r=${TIMESTAMP}")
             
-            # 🎯 もし返ってきた中身がJSON（{で始まるデータ}）じゃなかったら強制的に空扱いにする防壁
-            if [[ ! "$DATA_JSON" =~ ^\{ ]]; then
-              echo "⚠️ Warning: Received invalid JSON response from EDAM. Creating fallback data."
-              DATA_JSON="{}"
-            fi
+            # 🎯 [ { ... } ] の形（配列）で届くため、先頭の1件目 [0] を狙い撃ちして抽出するようにjqを大改造
+            WBGT=$(echo "$DATA_JSON" | jq -r '.[0].Wbgt // "0.0"' 2>/dev/null || echo "0.0")
+            KION=$(echo "$DATA_JSON" | jq -r '.[0].Kion // "0.0"' 2>/dev/null || echo "0.0")
+            KOKU=$(echo "$DATA_JSON" | jq -r '.[0].Koku // "0.0"' 2>/dev/null || echo "0.0")
+            SHITU=$(echo "$DATA_JSON" | jq -r '.[0].Shitu // "0"' 2>/dev/null || echo "0")
 
-            # jqで安全に抽出（中身が空なら自動でデフォルト値が入る）
-            WBGT=$(echo "$DATA_JSON" | jq -r '.Wbgt // "0.0"' 2>/dev/null || echo "0.0")
-            KION=$(echo "$DATA_JSON" | jq -r '.Kion // "0.0"' 2>/dev/null || echo "0.0")
-            KOKU=$(echo "$DATA_JSON" | jq -r '.Koku // "0.0"' 2>/dev/null || echo "0.0")
-            SHITU=$(echo "$DATA_JSON" | jq -r '.Shitu // "0"' 2>/dev/null || echo "0")
-
-            # 万が一のnullや空文字の最終ディフェンス
+            # 万が一のnullや空文字のディフェンス
             if [[ -z "$WBGT" || "$WBGT" == "null" ]]; then WBGT="0.0"; fi
             if [[ -z "$KION" || "$KION" == "null" ]]; then KION="0.0"; fi
             if [[ -z "$KOKU" || "$KOKU" == "null" ]]; then KOKU="0.0"; fi
@@ -58,9 +55,9 @@ jobs:
             elif (( $(echo "$WBGT 25.0" | awk '{print ($1 >= $2)}') )); then LEVEL="warning";
             elif (( $(echo "$WBGT 21.0" | awk '{print ($1 >= $2)}') )); then LEVEL="attention"; fi
 
-            # JSONファイルを保存
+            # 最終的なJSONファイルを保存（サイネージ側の index.html が読み込む形）
             echo "{\"wbgt\":\"$WBGT\",\"kion\":\"$KION\",\"koku\":\"$KOKU\",\"shitu\":\"$SHITU\",\"level\":\"$LEVEL\"}" > "data/${corp_id}/${lo_id}.json"
-            echo "👉 Successfully generated data/${corp_id}/${lo_id}.json (WBGT: $WBGT)"
+            echo "👉 Successfully generated data/${corp_id}/${lo_id}.json (WBGT: $WBGT, Kion: $KION)"
 
           done
           exit 0
