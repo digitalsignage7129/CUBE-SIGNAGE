@@ -2,67 +2,62 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WBGTサイネージ 設定・管理画面</title>
+    <title>【現場用】サイネージ・ロゴ登録システム</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f6f9; padding: 40px 20px; margin: 0; }
-        .admin-card { max-width: 500px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #111; margin-bottom: 25px; font-size: 22px; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 14px; }
-        input[type="text"], input[type="file"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 12px; background: #007bff; color: #fff; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; }
-        button:hover { background: #0056b3; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        .result-box { display: none; margin-top: 30px; padding-top: 25px; border-top: 2px dashed #ddd; }
-        .result-title { font-weight: bold; color: #28a745; text-align: center; margin-bottom: 15px; }
-        .nav-btn { display: block; text-align: center; padding: 12px; margin-bottom: 10px; border-radius: 4px; font-weight: bold; text-decoration: none; font-size: 14px; }
-        .btn-primary { background-color: #28a745; color: white; }
-        .url-text { background: #eee; padding: 8px; font-size: 13px; border-radius: 4px; word-break: break-all; font-family: monospace; margin-bottom: 15px; }
-        #status-msg { text-align: center; font-weight: bold; color: #007bff; margin-top: 10px; }
+        body { background-color: #111; color: #fff; font-family: sans-serif; padding: 20px; }
+        .box { background-color: #222; padding: 20px; border-radius: 8px; max-width: 500px; margin: 0 auto; }
+        input, button { width: 100%; padding: 10px; margin: 8px 0; box-sizing: border-box; border-radius: 4px; border: 1px solid #444; }
+        input[type="text"], input[type="password"] { background-color: #333; color: #fff; }
+        button { background-color: #0076df; color: white; font-weight: bold; cursor: pointer; border: none; }
+        button:disabled { background-color: #555; }
+        #status-msg { margin-top: 15px; color: #ffeb3b; text-align: center; font-weight: bold; }
+        .result { display: none; background-color: #1b5e20; padding: 15px; margin-top: 20px; border-radius: 4px; }
+        a { color: #fff; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="admin-card">
-    <h2>📊 現場サイネージ 新規登録・URL発行</h2>
+<div class="box">
+    <h2>🏗️ 現場ロゴ・アップロード</h2>
+    <p style="font-size: 0.85em; color: #aaa;">配布された「アクセスキー」と現場情報を入力して、ロゴ画像をアップロードしてください。</p>
     
-    <div id="form-area">
-        <div class="form-group">
-            <label for="corpId">① 顧客コード（5桁の数値）</label>
-            <input type="text" id="corpId" placeholder="例: 00574" maxlength="5">
-        </div>
-        
-        <div class="form-group">
-            <label for="loId">② 拠点ID（4桁の数値）</label>
-            <input type="text" id="loId" placeholder="例: 2451" maxlength="4">
-        </div>
-        
-        <div class="form-group">
-            <label for="logoFile">③ 表示するロゴ画像を選択（JPG / PNG）</label>
-            <input type="file" id="logoFile" accept="image/*">
-        </div>
-        
-        <button type="button" id="submit-btn" onclick="uploadToGitHub()">設定を確定してサーバーに保存</button>
-        <div id="status-msg"></div>
-    </div>
+    <label>① アクセスキー（共通パスワード）</label>
+    <input type="password" id="targetKey" placeholder="ghp_ で始まるキーを貼り付けてください">
 
-    <div id="result-area" class="result-box">
-        <div class="result-title">✨ サーバー保存 ＆ URL発行完了！</div>
-        
-        <label>🖥️ サイネージ登録用URL（端末へ登録するURL）</label>
-        <div class="url-text" id="display-url-text"></div>
-        <a href="#" id="btn-signage" class="nav-btn btn-primary" target="_blank">このまま画面表示を確認する</a>
+    <label>② 業者コード（5桁の数値）</label>
+    <input type="text" id="corpId" placeholder="例: 00574">
+
+    <label>③ 拠点ID（4桁の数値）</label>
+    <input type="text" id="loId" placeholder="例: 2451">
+
+    <label>④ ロゴ画像を選択</label>
+    <input type="file" id="logoFile" accept="image/*">
+
+    <button id="submit-btn" onclick="uploadToGitHub()">設定を確定してサイネージに反映する</button>
+
+    <div id="status-msg"></div>
+
+    <div id="result-area" class="result">
+        <p>🎉 ロゴの反映が成功しました！</p>
+        <p>サイネージ（PlayerMaster等）に登録するURLは以下です：</p>
+        <div id="display-url-text" style="background:#000; padding:10px; font-family:monospace; word-break:break-all; margin:10px 0;"></div>
+        <p><a id="btn-signage" target="_blank">👉 サイネージ画面を確認する</a></p>
     </div>
 </div>
 
 <script>
-    // 🎯 ここにご自身の環境の情報を入力してください
-    let GITHUB_TOKEN = "";
     const REPO_OWNER = "digitalsignage7129";
     const REPO_NAME = "CUBE-SIGNAGE";
 
+    // 画面が開いたときにURLの引数（CorpID等）があれば自動入力する（親切機能）
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if(urlParams.has('CorpID')) document.getElementById('corpId').value = urlParams.get('CorpID');
+        if(urlParams.has('LoID')) document.getElementById('loId').value = urlParams.get('LoID');
+    }
+
     async function uploadToGitHub() {
+        const githubToken = document.getElementById('targetKey').value.trim();
         const corpId = document.getElementById('corpId').value.trim();
         const loId = document.getElementById('loId').value.trim();
         const fileInput = document.getElementById('logoFile');
@@ -70,67 +65,65 @@
         const msgDiv = document.getElementById('status-msg');
         const btn = document.getElementById('submit-btn');
 
+        if (!githubToken) {
+            alert("アクセスキー（ghp_...）を入力してください。");
+            return;
+        }
         if (!corpId || !loId || !file) {
             alert("すべての項目を入力・選択してください。");
             return;
         }
 
         btn.disabled = true;
-        msgDiv.textContent = "サーバーにフォルダを作成して画像を保存中...";
+        msgDiv.textContent = "画像をアップロード中...（数十秒かかる場合があります）";
 
-        // 画像ファイルをBase64（テキスト）に変換して、GitHubが受け取れる形にする
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = async function () {
-            const base64Content = reader.result.split(',')[1]; // 純粋なデータ部分のみ抽出
-            
-            // 🎯 規則性に基づいた保存パスを決定 (例: logos/00574/2451_logo.png)
+            const base64Content = reader.result.split(',')[1];
             const fileExt = file.name.split('.').pop();
             const filePath = `logos/${corpId}/${loId}_logo.${fileExt}`;
-            
-            // GitHub APIのURL
             const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${filePath}`;
 
             try {
-                // すでに同じファイルがあるか念のためチェック（上書き用の仕様）
                 let sha = "";
+                // 既存のロゴがあるか確認
                 const checkRes = await fetch(url, {
-                    headers: { "Authorization": `Bearer ${GITHUB_TOKEN}` }
+                    headers: { "Authorization": `Bearer ${githubToken}` }
                 });
                 if (checkRes.ok) {
                     const checkData = await checkRes.json();
-                    sha = checkData.sha; // 上書きには既存ファイルのshaコードが必要
+                    sha = checkData.sha;
                 }
 
-                // GitHubへ直接アップロード（保存）命令を出す
+                // GitHubへ直接アップロード
                 const res = await fetch(url, {
                     method: "PUT",
                     headers: {
-                        "Authorization": `Bearer ${GITHUB_TOKEN}`,
+                        "Authorization": `Bearer ${githubToken}`,
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        message: `Upload logo for Corp:${corpId} LoID:${loId}`,
+                        message: `Upload logo by Client for Corp:${corpId} LoID:${loId}`,
                         content: base64Content,
-                        sha: sha // 初めてなら空、上書きなら既存のsha
+                        sha: sha
                     })
                 });
 
                 if (res.ok) {
-                    msgDiv.textContent = "保存成功！";
-                    
-                    // サイネージ登録用の【極短URL】を生成
+                    msgDiv.textContent = "";
                     const basePath = window.location.href.split('?')[0].replace('admin.html', '');
                     const signageUrl = `${basePath}index.html?CorpID=${corpId}&LoID=${loId}&Ext=${fileExt}`;
                     
                     document.getElementById('display-url-text').textContent = signageUrl;
                     document.getElementById('btn-signage').href = signageUrl;
                     document.getElementById('result-area').style.display = 'block';
+                    alert("保存に成功しました！サイネージ用URLが発行されました。");
                 } else {
                     throw new Error("Upload failed");
                 }
             } catch (err) {
-                alert("GitHubへの保存に失敗しました。トークンやリポジトリ名を確認してください。");
+                alert("保存に失敗しました。アクセスキー（ghp_...）が間違っているか、期限が切れている可能性があります。");
                 console.error(err);
             } finally {
                 btn.disabled = false;
