@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT環境モニター（5秒ローテーション版）</title>
+    <title>WBGT環境モニター（側面ローテーション版）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -36,96 +36,91 @@
             overflow: hidden;
         }
 
-        /* 🔄 データ表示エリア（左側の512px分をスライド用の舞台にする） */
-        .stage-area {
+        /* 🔄 側面データ用のステージ（左側4面分＝512px） */
+        .side-stage {
             flex: 0 0 512px !important;
             width: 512px !important;
             height: 128px !important;
+            display: flex;
             position: relative;
             overflow: hidden;
-            background-color: #000000;
         }
 
-        /* 128px正方形ブロック（基本設定） */
+        /* 128px正方形ブロック（完璧な元のサイズへ復帰） */
         .block {
-            position: absolute; /* 位置を絶対座標にして重ねる */
-            top: 0;
-            left: 0;
-            width: 512px !important; /* ⭐ 1面を512px幅（左4面分すべて）に巨大化！ */
+            flex: 0 0 128px !important; 
+            width: 128px !important;
             height: 128px !important;
+            border-right: 1px solid #1a1a1a;
             display: flex;
             flex-direction: column;
             justify-content: space-between; 
-            padding: 4px 10px 0px 10px; /* 横幅が広がったので余白を最適化 */
+            padding: 2px 2px 0px 2px;
             text-align: center;
             background-color: #000000;
             color: #FFFFFF;
             font-family: 'Arial Black', 'Impact', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
             overflow: hidden;
             
-            /* ⭐ 5秒ごとの切り替えをヌルッと美しくするアニメーション設定 */
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.6s ease, visibility 0.6s ease, background-color 0.4s ease;
-            z-index: 1;
+            /* ⭐ 位置移動をスムーズにするための絶対配置とアニメーション */
+            position: absolute;
+            top: 0;
+            transition: left 0.6s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.4s ease, color 0.4s ease;
         }
 
-        /* ⭐ 現在表示すべきアクティブな面だけを浮き上がらせる */
-        .block.active {
-            opacity: 1;
-            visibility: visible;
-            z-index: 2;
-        }
-
-        /* 【上段】項目ラベル：512px幅になったので超巨大化（24px） */
+        /* 【上段】項目ラベル */
         .label {
-            font-size: 24px; 
+            font-size: 17px;
             font-weight: 900;
             color: #FFFFFF !important;
             white-space: nowrap;
             line-height: 1.0;
-            text-shadow: 2px 2px 0px #000000;
-            margin-top: 4px;
+            letter-spacing: -0.5px;
+            text-shadow: 1px 1px 0px #000000;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1px;
         }
         .text-dark { color: #000000 !important; text-shadow: none !important; }
 
-        /* 【中段・上】数値表示：512pxの中心に超ド迫力サイズ（56px）で配置！ */
+        /* 【中段・上】数値表示 */
         .value-container {
             display: flex;
             align-items: baseline;
             justify-content: center;
-            line-height: 1.0;
-            margin-top: -4px;
+            line-height: 0.9;
+            margin-top: -2px; 
         }
         .value {
-            font-size: 56px; /* 42pxから56pxへ究極の巨大化！ */
+            font-size: 42px;
             font-family: 'Arial Black', 'Impact', sans-serif;
             font-weight: 900;
-            line-height: 1.0;
-            letter-spacing: -1px;
+            line-height: 0.9;
+            letter-spacing: -1.5px;
         }
         .unit {
-            font-size: 20px;
+            font-size: 14px;
             font-weight: 900;
-            margin-left: 3px;
-            line-height: 1.0;
+            margin-left: 1px;
+            line-height: 0.9;
         }
 
-        /* 【中段・下】顔文字＋文言の合体ステージ */
+        /* 【中段・下】顔文字＋文言 */
         .status-area {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 6px;
             width: 100%;
-            height: 28px;
-            margin-top: -2px;
+            height: 22px;
+            margin-top: -1px;
+            margin-bottom: 2px;
         }
-
-        /* 顔写真（一回り大きくしてさらに表情クッキリ） */
         .avatar-box {
-            width: 26px; 
-            height: 26px;
+            width: 20px;
+            height: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -136,51 +131,46 @@
             width: 100%;
             object-fit: contain;
             border-radius: 50%;
-            filter: brightness(1.65) drop-shadow(0px 1px 2px rgba(0,0,0,0.8));
+            filter: brightness(1.65) drop-shadow(0px 1px 1px rgba(0,0,0,0.8));
         }
         .no-filter {
-            filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.8)) !important;
+            filter: drop-shadow(0px 1px 1px rgba(0,0,0,0.8)) !important;
         }
-        
-        /* 警戒文言（注意など） */
         .status-text {
-            font-size: 24px; /* 18pxから24pxへ大増量！ */
+            font-size: 18px;
             font-weight: 900;
             font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
             white-space: nowrap;
             line-height: 1.0;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
         
-        /* 【下段】時計専用の独立ブラックベルト */
+        /* 【下段】時計専用ブラックベルト */
         .bottom-row {
             display: flex;
             justify-content: center;
             align-items: center;
-            width: calc(100% + 20px); /* 左右パディングを打ち消す */
-            margin-left: -10px;
+            width: 100%;
             background-color: rgba(0, 0, 0, 0.6);
-            height: 30px; 
+            height: 26px;
         }
         .bottom-dark {
             background-color: rgba(255, 255, 255, 0.5) !important;
         }
-
-        /* 時計（日付＋時間） */
         .time-stamp {
-            font-size: 18px; /* 16pxから18pxへ拡大！ */
+            font-size: 16px;
             font-family: 'Arial Black', 'Impact', monospace;
             font-weight: 900;
             white-space: nowrap;
             line-height: 1.0;
             color: #FFFFFF !important;
             text-shadow: 1px 1px 0px #000000;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.2px;
         }
         .time-dark { color: #000000 !important; text-shadow: none !important; }
         .time-light { color: #FFFFFF !important; }
 
-        /* ⑤ ロゴエリア：右端の128pxに完全固定固定 */
+        /* ⑤ 上面ロゴエリア：右端128pxに完全不動で常駐 */
         .logo-block {
             flex: 0 0 128px !important;
             width: 128px !important;
@@ -190,7 +180,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 10; /* 最前面に固定 */
+            z-index: 10; /* 側面が潜り込まないように最前面固定 */
             border-left: 1px solid #1a1a1a;
         }
         .logo-wrapper {
@@ -211,10 +201,10 @@
 
     <div class="signage-container">
         
-        <div class="stage-area">
+        <div class="side-stage" id="side-stage">
             
-            <div class="block data-block active" id="pane-0">
-                <div class="label data-label">暑さ指数 (WBGT)</div>
+            <div class="block data-block" id="pane-0" style="left: 0px;">
+                <div class="label data-label">暑さ指数</div>
                 <div class="value-container">
                     <span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span>
                 </div>
@@ -227,7 +217,7 @@
                 </div>
             </div>
 
-            <div class="block data-block" id="pane-1">
+            <div class="block data-block" id="pane-1" style="left: 128px;">
                 <div class="label data-label">現場気温</div>
                 <div class="value-container">
                     <span class="value" id="val-kion">--.-</span><span class="unit">℃</span>
@@ -241,7 +231,7 @@
                 </div>
             </div>
 
-            <div class="block data-block" id="pane-2">
+            <div class="block data-block" id="pane-2" style="left: 256px;">
                 <div class="label data-label">黒球温度</div>
                 <div class="value-container">
                     <span class="value" id="val-koku">--.-</span><span class="unit">℃</span>
@@ -255,7 +245,7 @@
                 </div>
             </div>
 
-            <div class="block data-block" id="pane-3">
+            <div class="block data-block" id="pane-3" style="left: 384px;">
                 <div class="label data-label">現場湿度</div>
                 <div class="value-container">
                     <span class="value" id="val-shitu">--.-</span><span class="unit">%</span>
@@ -284,7 +274,6 @@
 
         const dataUrl = `data/${corpId}/${loId}.json`;
 
-        // 時計の更新
         function updateClock() {
             const now = new Date();
             const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -296,17 +285,23 @@
             document.querySelectorAll('.data-time').forEach(el => el.textContent = timeString);
         }
 
-        // 🌟 5秒ごとに左4面を入れ替えるローテーションシステム
-        let currentPaneIndex = 0;
-        function rotatePanes() {
-            // 現在のアクティブを消す
-            document.getElementById(`pane-${currentPaneIndex}`).classList.remove('active');
+        // 🌟 側面4つの128pxブロックを、5秒ごとに左へ「ガシャコン」とズラすローテーションロジック
+        // 配置パターンのインデックス（0〜3）を回す
+        let step = 0;
+        function rotateSidePanes() {
+            step = (step + 1) % 4;
             
-            // 次のインデックスを計算（0 -> 1 -> 2 -> 3 -> 0...）
-            currentPaneIndex = (currentPaneIndex + 1) % 4;
-            
-            // 次の面を表示する
-            document.getElementById(`pane-${currentPaneIndex}`).classList.add('active');
+            // 各パターンの時の、各ブロックの表示位置（左からのpx数）
+            // step 0: [0, 128, 256, 384]
+            // step 1: [384, 0, 128, 256]  <- WBGTが一番右に回り、気温が一番左に来る
+            // step 2: [256, 384, 0, 128]
+            // step 3: [128, 256, 384, 0]
+            for (let i = 0; i < 4; i++) {
+                const pane = document.getElementById(`pane-${i}`);
+                // 計算式でそれぞれの面の現在の左位置（X座標）を割り出す
+                let leftPosition = ((i - step + 4) % 4) * 128;
+                pane.style.left = `${leftPosition}px`;
+            }
         }
 
         async function updateSignageData() {
@@ -384,15 +379,14 @@
             }
         }
 
-        // 初期セットアップと各タイマー起動
         updateClock();
         setInterval(updateClock, 1000);
 
         updateSignageData();
-        setInterval(updateSignageData, 10000); // 10秒ごとに裏の最新JSONを監視
+        setInterval(updateSignageData, 10000);
 
-        // 🎯 5秒（5000ミリ秒）ごとに左の画面をローテーション
-        setInterval(rotatePanes, 5000);
+        // 🎯 5秒ごとに左側のブロックの配置（X座標）をスライド移動させる
+        setInterval(rotateSidePanes, 5000);
     </script>
 </body>
 </html>
