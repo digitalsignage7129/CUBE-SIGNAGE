@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT環境モニター（限界突破版）</title>
+    <title>WBGT環境モニター（5秒ローテーション版）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -36,82 +36,96 @@
             overflow: hidden;
         }
 
-        /* 128px正方形ブロック */
-        .block {
-            flex: 0 0 128px !important; 
-            width: 128px !important;
+        /* 🔄 データ表示エリア（左側の512px分をスライド用の舞台にする） */
+        .stage-area {
+            flex: 0 0 512px !important;
+            width: 512px !important;
             height: 128px !important;
-            border-right: 1px solid #1a1a1a;
+            position: relative;
+            overflow: hidden;
+            background-color: #000000;
+        }
+
+        /* 128px正方形ブロック（基本設定） */
+        .block {
+            position: absolute; /* 位置を絶対座標にして重ねる */
+            top: 0;
+            left: 0;
+            width: 512px !important; /* ⭐ 1面を512px幅（左4面分すべて）に巨大化！ */
+            height: 128px !important;
             display: flex;
             flex-direction: column;
             justify-content: space-between; 
-            padding: 2px 2px 0px 2px; /* 上下の無駄な隙間をゼロへ */
+            padding: 4px 10px 0px 10px; /* 横幅が広がったので余白を最適化 */
             text-align: center;
             background-color: #000000;
             color: #FFFFFF;
             font-family: 'Arial Black', 'Impact', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
-            transition: background-color 0.4s ease, color 0.4s ease;
             overflow: hidden;
-        }
-        .block:last-child {
-            border-right: none;
+            
+            /* ⭐ 5秒ごとの切り替えをヌルッと美しくするアニメーション設定 */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.6s ease, visibility 0.6s ease, background-color 0.4s ease;
+            z-index: 1;
         }
 
-        /* 【上段】項目ラベル：隙間を詰めてガッツリ巨大化 */
+        /* ⭐ 現在表示すべきアクティブな面だけを浮き上がらせる */
+        .block.active {
+            opacity: 1;
+            visibility: visible;
+            z-index: 2;
+        }
+
+        /* 【上段】項目ラベル：512px幅になったので超巨大化（24px） */
         .label {
-            font-size: 17px; /* 16pxから17pxへ拡大！ */
+            font-size: 24px; 
             font-weight: 900;
             color: #FFFFFF !important;
             white-space: nowrap;
             line-height: 1.0;
-            letter-spacing: -0.5px;
-            text-shadow: 1px 1px 0px #000000;
-            height: 22px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 1px;
+            text-shadow: 2px 2px 0px #000000;
+            margin-top: 4px;
         }
         .text-dark { color: #000000 !important; text-shadow: none !important; }
 
-        /* 【中段・上】数値：デッドスペースを消して圧倒的な巨体（42px）へ */
+        /* 【中段・上】数値表示：512pxの中心に超ド迫力サイズ（56px）で配置！ */
         .value-container {
             display: flex;
             align-items: baseline;
             justify-content: center;
-            line-height: 0.9;
-            margin-top: -2px; 
+            line-height: 1.0;
+            margin-top: -4px;
         }
         .value {
-            font-size: 42px; /* 34pxから42pxへ驚異の超最大化！ */
+            font-size: 56px; /* 42pxから56pxへ究極の巨大化！ */
             font-family: 'Arial Black', 'Impact', sans-serif;
             font-weight: 900;
-            line-height: 0.9;
-            letter-spacing: -1.5px;
+            line-height: 1.0;
+            letter-spacing: -1px;
         }
         .unit {
-            font-size: 14px;
+            font-size: 20px;
             font-weight: 900;
-            margin-left: 1px;
-            line-height: 0.9;
+            margin-left: 3px;
+            line-height: 1.0;
         }
 
-        /* 【中段・下】お引越ししてきた「顔文字＋文言」の合体ステージ */
+        /* 【中段・下】顔文字＋文言の合体ステージ */
         .status-area {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px; /* 隙間を広げて見やすく */
+            gap: 10px;
             width: 100%;
-            height: 22px;
-            margin-top: -1px;
-            margin-bottom: 2px;
+            height: 28px;
+            margin-top: -2px;
         }
 
-        /* 顔写真（中段に合わせたジャストサイズ） */
+        /* 顔写真（一回り大きくしてさらに表情クッキリ） */
         .avatar-box {
-            width: 20px; /* 16pxから20pxへ拡大！ */
-            height: 20px;
+            width: 26px; 
+            height: 26px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -122,55 +136,62 @@
             width: 100%;
             object-fit: contain;
             border-radius: 50%;
-            filter: brightness(1.65) drop-shadow(0px 1px 1px rgba(0,0,0,0.8));
+            filter: brightness(1.65) drop-shadow(0px 1px 2px rgba(0,0,0,0.8));
         }
         .no-filter {
-            filter: drop-shadow(0px 1px 1px rgba(0,0,0,0.8)) !important;
+            filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.8)) !important;
         }
         
-        /* 警戒文言（注意など）：中段でデカデカと自己主張 */
+        /* 警戒文言（注意など） */
         .status-text {
-            font-size: 18px; /* 16pxから18pxへ超拡大！ */
+            font-size: 24px; /* 18pxから24pxへ大増量！ */
             font-weight: 900;
             font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
             white-space: nowrap;
             line-height: 1.0;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
         }
         
-        /* 【下段】時計専用の独立ブラックベルト（縦幅に余裕を確保） */
+        /* 【下段】時計専用の独立ブラックベルト */
         .bottom-row {
             display: flex;
             justify-content: center;
             align-items: center;
-            width: 100%;
+            width: calc(100% + 20px); /* 左右パディングを打ち消す */
+            margin-left: -10px;
             background-color: rgba(0, 0, 0, 0.6);
-            height: 26px; /* 24pxから26pxに広げて文字潰れを完全防止 */
+            height: 30px; 
         }
         .bottom-dark {
             background-color: rgba(255, 255, 255, 0.5) !important;
         }
 
-        /* 時計（日付＋時間）：128ピッチの横幅いっぱいに極太発光 */
+        /* 時計（日付＋時間） */
         .time-stamp {
-            font-size: 16px; /* 13pxから16pxへ究極の大サイズ化！ */
+            font-size: 18px; /* 16pxから18pxへ拡大！ */
             font-family: 'Arial Black', 'Impact', monospace;
             font-weight: 900;
             white-space: nowrap;
             line-height: 1.0;
             color: #FFFFFF !important;
             text-shadow: 1px 1px 0px #000000;
-            letter-spacing: 0.2px;
+            letter-spacing: 0.5px;
         }
         .time-dark { color: #000000 !important; text-shadow: none !important; }
         .time-light { color: #FFFFFF !important; }
 
-        /* ⑤ ロゴ */
-        #block-logo {
+        /* ⑤ ロゴエリア：右端の128pxに完全固定固定 */
+        .logo-block {
+            flex: 0 0 128px !important;
+            width: 128px !important;
+            height: 128px !important;
             padding: 0 !important; 
             background-color: #000000 !important;
+            display: flex;
             justify-content: center;
             align-items: center;
+            z-index: 10; /* 最前面に固定 */
+            border-left: 1px solid #1a1a1a;
         }
         .logo-wrapper {
             width: 128px !important;
@@ -189,67 +210,71 @@
 <body>
 
     <div class="signage-container">
-        <div class="block data-block">
-            <div class="label data-label">暑さ指数</div>
-            <div class="value-container">
-                <span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span>
+        
+        <div class="stage-area">
+            
+            <div class="block data-block active" id="pane-0">
+                <div class="label data-label">暑さ指数 (WBGT)</div>
+                <div class="value-container">
+                    <span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span>
+                </div>
+                <div class="status-area">
+                    <div class="avatar-box"><img src="5.png" id="img-wbgt" class="avatar-img" alt="顔"></div>
+                    <span class="status-text" id="status-wbgt">――</span>
+                </div>
+                <div class="bottom-row" id="bottom-wbgt">
+                    <span class="time-stamp data-time">00/00 00:00</span>
+                </div>
             </div>
-            <div class="status-area">
-                <div class="avatar-box"><img src="5.png" id="img-wbgt" class="avatar-img" alt="顔"></div>
-                <span class="status-text" id="status-wbgt">――</span>
-            </div>
-            <div class="bottom-row" id="bottom-wbgt">
-                <span class="time-stamp data-time">00/00 00:00</span>
-            </div>
-        </div>
 
-        <div class="block data-block">
-            <div class="label data-label">現場気温</div>
-            <div class="value-container">
-                <span class="value" id="val-kion">--.-</span><span class="unit">℃</span>
+            <div class="block data-block" id="pane-1">
+                <div class="label data-label">現場気温</div>
+                <div class="value-container">
+                    <span class="value" id="val-kion">--.-</span><span class="unit">℃</span>
+                </div>
+                <div class="status-area">
+                    <div class="avatar-box"><img src="5.png" id="img-kion" class="avatar-img" alt="顔"></div>
+                    <span class="status-text" id="status-kion">――</span>
+                </div>
+                <div class="bottom-row" id="bottom-kion">
+                    <span class="time-stamp data-time">00/00 00:00</span>
+                </div>
             </div>
-            <div class="status-area">
-                <div class="avatar-box"><img src="5.png" id="img-kion" class="avatar-img" alt="顔"></div>
-                <span class="status-text" id="status-kion">――</span>
-            </div>
-            <div class="bottom-row" id="bottom-kion">
-                <span class="time-stamp data-time">00/00 00:00</span>
-            </div>
-        </div>
 
-        <div class="block data-block">
-            <div class="label data-label">黒球温度</div>
-            <div class="value-container">
-                <span class="value" id="val-koku">--.-</span><span class="unit">℃</span>
+            <div class="block data-block" id="pane-2">
+                <div class="label data-label">黒球温度</div>
+                <div class="value-container">
+                    <span class="value" id="val-koku">--.-</span><span class="unit">℃</span>
+                </div>
+                <div class="status-area">
+                    <div class="avatar-box"><img src="5.png" id="img-koku" class="avatar-img" alt="顔"></div>
+                    <span class="status-text" id="status-koku">――</span>
+                </div>
+                <div class="bottom-row" id="bottom-koku">
+                    <span class="time-stamp data-time">00/00 00:00</span>
+                </div>
             </div>
-            <div class="status-area">
-                <div class="avatar-box"><img src="5.png" id="img-koku" class="avatar-img" alt="顔"></div>
-                <span class="status-text" id="status-koku">――</span>
-            </div>
-            <div class="bottom-row" id="bottom-koku">
-                <span class="time-stamp data-time">00/00 00:00</span>
-            </div>
-        </div>
 
-        <div class="block data-block">
-            <div class="label data-label">現場湿度</div>
-            <div class="value-container">
-                <span class="value" id="val-shitu">--.-</span><span class="unit">%</span>
+            <div class="block data-block" id="pane-3">
+                <div class="label data-label">現場湿度</div>
+                <div class="value-container">
+                    <span class="value" id="val-shitu">--.-</span><span class="unit">%</span>
+                </div>
+                <div class="status-area">
+                    <div class="avatar-box"><img src="5.png" id="img-shitu" class="avatar-img" alt="顔"></div>
+                    <span class="status-text" id="status-shitu">――</span>
+                </div>
+                <div class="bottom-row" id="bottom-shitu">
+                    <span class="time-stamp data-time">00/00 00:00</span>
+                </div>
             </div>
-            <div class="status-area">
-                <div class="avatar-box"><img src="5.png" id="img-shitu" class="avatar-img" alt="顔"></div>
-                <span class="status-text" id="status-shitu">――</span>
-            </div>
-            <div class="bottom-row" id="bottom-shitu">
-                <span class="time-stamp data-time">00/00 00:00</span>
-            </div>
-        </div>
 
-        <div class="block" id="block-logo">
+        </div><div class="logo-block">
             <div class="logo-wrapper">
                 <img src="logo.png" alt="ロゴ">
             </div>
         </div>
+
     </div>
 
     <script>
@@ -259,6 +284,7 @@
 
         const dataUrl = `data/${corpId}/${loId}.json`;
 
+        // 時計の更新
         function updateClock() {
             const now = new Date();
             const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -270,6 +296,19 @@
             document.querySelectorAll('.data-time').forEach(el => el.textContent = timeString);
         }
 
+        // 🌟 5秒ごとに左4面を入れ替えるローテーションシステム
+        let currentPaneIndex = 0;
+        function rotatePanes() {
+            // 現在のアクティブを消す
+            document.getElementById(`pane-${currentPaneIndex}`).classList.remove('active');
+            
+            // 次のインデックスを計算（0 -> 1 -> 2 -> 3 -> 0...）
+            currentPaneIndex = (currentPaneIndex + 1) % 4;
+            
+            // 次の面を表示する
+            document.getElementById(`pane-${currentPaneIndex}`).classList.add('active');
+        }
+
         async function updateSignageData() {
             try {
                 const timeStamp = new Date().getTime();
@@ -278,7 +317,6 @@
                 
                 const data = await response.json();
                 
-                // 暑さ指数が(WBGT)のままだと横幅が足りずハミ出るため、「暑さ指数」の4文字にスッキリ修正
                 document.getElementById('val-wbgt').textContent = data.wbgt !== "0.0" ? Number(data.wbgt).toFixed(1) : '--.-';
                 document.getElementById('val-kion').textContent = data.kion !== "0.0" ? Number(data.kion).toFixed(1) : '--.-';
                 document.getElementById('val-koku').textContent = data.koku !== "0.0" ? Number(data.koku).toFixed(1) : '--.-';
@@ -346,11 +384,15 @@
             }
         }
 
+        // 初期セットアップと各タイマー起動
         updateClock();
         setInterval(updateClock, 1000);
 
         updateSignageData();
-        setInterval(updateSignageData, 10000);
+        setInterval(updateSignageData, 10000); // 10秒ごとに裏の最新JSONを監視
+
+        // 🎯 5秒（5000ミリ秒）ごとに左の画面をローテーション
+        setInterval(rotatePanes, 5000);
     </script>
 </body>
 </html>
