@@ -6,7 +6,7 @@
     <style>
         body { background: #111; color: white; font-family: sans-serif; padding: 20px; }
         h1 { text-align: center; font-size: 20px; margin-bottom: 20px; }
-        h2 { font-size: 16px; margin-top: 30px; border-left: 5px solid cyan; padding-left: 10px; }
+        h2 { font-size: 16px; margin-top: 30px; border-left: 5px solid #99FFFF; padding-left: 10px; }
         
         /* 640x128 実機投影サイズシミュレーター */
         .test-frame {
@@ -20,14 +20,12 @@
             box-shadow: 0 0 20px rgba(0,255,255,0.2);
         }
         
-        /* 実機のiframeを埋め込む */
         .test-iframe {
             width: 100%;
             height: 100%;
             border: none;
         }
 
-        /* 解説エリア */
         .description-box {
             width: 640px;
             margin: 10px auto;
@@ -40,56 +38,55 @@
         }
         .desc-title { font-weight: bold; color: white; margin-bottom: 5px; }
         .color-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; }
-
     </style>
 </head>
 <body>
 
-    <h1>WBGTサイネージ・判定表示全パターン確認（実機投影サイズ）</h1>
+    <h1>WBGTサイネージ・判定表示全パターン確認（公式カラー完全準拠）</h1>
 
     <h2>1. 【ほぼ安全】（~22.0℃）</h2>
     <div class="test-frame">
-        <iframe class="test-iframe" src="index.html?CorpID=TEST&LoID=safe"></iframe>
+        <iframe class="test-iframe" src="index.html?test=safe"></iframe>
     </div>
     <div class="description-box">
-        <div class="desc-title"><span class="color-dot" style="background:#00B5D4;"></span>ほぼ安全（水色）モード</div>
-        涼しい、または快適な状態。サイネージ全体が鮮やかな水色に包まれ、ニッコリ顔（5.png）が表示されます。黒背景とのコントラストが美しく、最も精神的に安心できる表示です。
+        <div class="desc-title"><span class="color-dot" style="background:#99FFFF;"></span>ほぼ安全（水色）</div>
+        背景色：#99FFFF / 文字色：黒（反転表示）
     </div>
 
     <h2>2. 【注意】（22.1℃~ 26.0℃）</h2>
     <div class="test-frame">
-        <iframe class="test-iframe" src="index.html?CorpID=TEST&LoID=attention"></iframe>
+        <iframe class="test-iframe" src="index.html?test=attention"></iframe>
     </div>
     <div class="description-box">
-        <div class="desc-title"><span class="color-dot" style="background:#C4F941;"></span>注意（黄緑）モード</div>
-        少し暑さを感じ始める状態。背景が黄緑色になり、困った顔（4.png）が表示されます。このモードのみ、文字色が「黒」に反転します（ text-dark / bottom-dark ）。LED上で黒文字が潰れないか確認してください。
+        <div class="desc-title"><span class="color-dot" style="background:#99FF99;"></span>注意（緑）</div>
+        背景色：#99FF99 / 文字色：黒（反転表示）
     </div>
 
     <h2>3. 【警戒】（26.1℃~29.0℃）</h2>
     <div class="test-frame">
-        <iframe class="test-iframe" src="index.html?CorpID=TEST&LoID=warning"></iframe>
+        <iframe class="test-iframe" src="index.html?test=warning"></iframe>
     </div>
     <div class="description-box">
-        <div class="desc-title"><span class="color-dot" style="background:#B7732D;"></span>警戒（オレンジ）モード</div>
-        熱中症のリスクが高まる状態。背景が鮮やかなオレンジになり、苦悶の表情（3.png）が表示されます。文字色は白に戻ります。
+        <div class="desc-title"><span class="color-dot" style="background:#FFFF66;"></span>警戒（黄）</div>
+        背景色：#FFFF66 / 文字色：黒（反転表示）
     </div>
 
     <h2>4. 【厳重警戒】（29.1℃~32.0℃）</h2>
     <div class="test-frame">
-        <iframe class="test-iframe" src="index.html?CorpID=TEST&LoID=severe"></iframe>
+        <iframe class="test-iframe" src="index.html?test=severe"></iframe>
     </div>
     <div class="description-box">
-        <div class="desc-title"><span class="color-dot" style="background:#7C3E1E;"></span>厳重警戒（茶色）モード</div>
-        非常に危険な状態。オレンジより暗く、重々しい茶色（ severe ）の背景になります。完全にバテた顔（2.png）が表示され、白色文字とのコントラストが際立ちます。
+        <div class="desc-title"><span class="color-dot" style="background:#FF9933;"></span>厳重警戒（オレンジ）</div>
+        背景色：#FF9933 / 文字色：白
     </div>
 
     <h2>5. 【危険】（32.1℃~）</h2>
     <div class="test-frame">
-        <iframe class="test-iframe" src="index.html?CorpID=TEST&LoID=danger"></iframe>
+        <iframe class="test-iframe" src="index.html?test=danger"></iframe>
     </div>
     <div class="description-box">
-        <div class="desc-title"><span class="color-dot" style="background:#A63A3A;"></span>危険（赤）モード</div>
-        最上級の警告状態。サイネージ全体が 真っ赤 になり、グロッキーな顔（1.png）が表示されます。LEDで最も光を放つ赤色と白色文字の組み合わせは、遠くからでも一瞬で異常を伝えます。
+        <div class="desc-title"><span class="color-dot" style="background:#FF3333;"></span>危険（赤）</div>
+        背景色：#FF3333 / 文字色：白
     </div>
 
 </body>
