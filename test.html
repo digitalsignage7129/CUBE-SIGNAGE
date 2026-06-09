@@ -82,6 +82,7 @@
             justify-content: center;
             margin-top: 1px;
         }
+        /* ☀️ 明るい背景のときは文字に黒影を付けず、クッキリ黒文字にする */
         .text-dark { color: #000000 !important; text-shadow: none !important; }
 
         /* 【中段・上】数値表示 */
@@ -150,6 +151,7 @@
             background-color: rgba(0, 0, 0, 0.6);
             height: 26px;
         }
+        /* ☀️ 明るい背景のときはベルトも少し明るくして文字の黒を際立たせる */
         .bottom-dark {
             background-color: rgba(0, 0, 0, 0.15) !important;
             border-top: 1px solid rgba(0,0,0,0.1);
@@ -165,7 +167,7 @@
         .time-dark { color: #000000 !important; text-shadow: none !important; }
         .time-light { color: #FFFFFF !important; text-shadow: 1px 1px 0px #000000; }
 
-        /* ⑤ 上面ロゴエリア */
+        /* ⑤ 上面ロゴエリア（デモ専用にロゴ固定） */
         .logo-block {
             flex: 0 0 128px !important;
             width: 128px !important;
@@ -306,21 +308,22 @@
             }
         }
 
-        // 🎯 12秒ごとに自動で切り替わる「5パターン固定ダミーデータ」（公式5色完全準拠）
+        // 🎯 12秒ごとに自動で切り替わる「5パターン固定ダミーデータ」
         const demoPatterns = [
-            { level: 'safe',      wbgt: 20.5, kion: 22.0, koku: 21.0, shitu: 48 }, // ①ほぼ安全（水色）
-            { level: 'attention', wbgt: 24.2, kion: 26.1, koku: 25.0, shitu: 55 }, // ②注意（緑）
-            { level: 'warning',   wbgt: 27.5, kion: 29.0, koku: 29.5, shitu: 60 }, // ③警戒（黄）
-            { level: 'severe',    wbgt: 30.2, kion: 31.8, koku: 33.5, shitu: 68 }, // ④厳重警戒（オレンジ）
-            { level: 'danger',    wbgt: 33.5, kion: 35.2, koku: 38.0, shitu: 75 }  // ⑤危険（赤）
+            { level: 'safe',      wbgt: 20.5, kion: 22.0, koku: 21.0, shitu: 48 }, // ①ほぼ安全
+            { level: 'attention', wbgt: 24.2, kion: 26.1, koku: 25.0, shitu: 55 }, // ②注意
+            { level: 'warning',   wbgt: 27.5, kion: 29.0, koku: 29.5, shitu: 60 }, // ③警戒
+            { level: 'severe',    wbgt: 30.2, kion: 31.8, koku: 33.5, shitu: 68 }, // ④厳重警戒
+            { level: 'danger',    wbgt: 33.5, kion: 35.2, koku: 38.0, shitu: 75 }  // ⑤危険
         ];
 
+        // 🎨 本番のindex.htmlに実装されている5色のカラーコードと白黒反転ロジック
         const themeMap = {
-            'danger':    { bg: '#FF3333', text: '#FFFFFF', txt: '危 険',    img: '1.png', dark: false },
-            'severe':    { bg: '#FF9933', text: '#FFFFFF', txt: '厳重警戒',  img: '2.png', dark: false },
-            'warning':   { bg: '#FFFF66', text: '#000000', txt: '警 戒',    img: '3.png', dark: true  },
-            'attention': { bg: '#99FF99', text: '#000000', txt: '注 意',    img: '4.png', dark: true  },
-            'safe':      { bg: '#99FFFF', text: '#000000', txt: 'ほぼ安全',  img: '5.png', dark: true  }
+            'danger':    { bg: '#FF3333', text: '#FFFFFF', txt: '危 険',    img: '1.png', dark: false }, // 濃い赤 + 白文字
+            'severe':    { bg: '#FF9933', text: '#FFFFFF', txt: '厳重警戒',  img: '2.png', dark: false }, // 橙 + 白文字
+            'warning':   { bg: '#FFFF66', text: '#000000', txt: '警 戒',    img: '3.png', dark: true  }, // 黄 + 黒文字
+            'attention': { bg: '#99FF99', text: '#000000', txt: '注 意',    img: '4.png', dark: true  }, // 緑 + 黒文字
+            'safe':      { bg: '#99FFFF', text: '#000000', txt: 'ほぼ安全',  img: '5.png', dark: true  }  // 水色 + 黒文字
         };
 
         let currentPatternIndex = 0;
