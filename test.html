@@ -2,92 +2,413 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>WBGTサイネージ・全判定パターン確認テスト</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Expires" content="0">
+    <title>WBGT環境モニター（テストモード修正版）</title>
     <style>
-        body { background: #111; color: white; font-family: sans-serif; padding: 20px; }
-        h1 { text-align: center; font-size: 20px; margin-bottom: 20px; }
-        h2 { font-size: 16px; margin-top: 30px; border-left: 5px solid #99FFFF; padding-left: 10px; }
-        
-        /* 640x128 実機投影サイズシミュレーター */
-        .test-frame {
-            width: 640px;
-            height: 128px;
-            border: 2px solid #555;
-            margin: 0 auto;
-            position: relative;
-            overflow: hidden;
-            background: black;
-            box-shadow: 0 0 20px rgba(0,255,255,0.2);
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
-        
-        .test-iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
+        body {
+            background-color: #000000;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
         }
 
-        .description-box {
-            width: 640px;
-            margin: 10px auto;
-            background: #222;
-            padding: 15px;
-            border-radius: 5px;
-            font-size: 14px;
-            line-height: 1.6;
-            color: #ccc;
+        /* 640x128 絶対固定サイズ */
+        .signage-container {
+            display: flex;
+            width: 640px !important;
+            height: 128px !important;
+            min-width: 640px !important;
+            max-width: 640px !important;
+            min-height: 128px !important;
+            max-height: 128px !important;
+            background-color: #000000;
+            overflow: hidden;
         }
-        .desc-title { font-weight: bold; color: white; margin-bottom: 5px; }
-        .color-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; }
+
+        /* 🔄 側面データ用のステージ（左側4面分＝512px） */
+        .side-stage {
+            flex: 0 0 512px !important;
+            width: 512px !important;
+            height: 128px !important;
+            display: flex;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 128px正方形ブロック */
+        .block {
+            flex: 0 0 128px !important; 
+            width: 128px !important;
+            height: 128px !important;
+            border-right: 1px solid #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; 
+            padding: 2px 2px 0px 2px;
+            text-align: center;
+            background-color: #000000;
+            color: #FFFFFF;
+            font-family: 'Arial Black', 'Impact', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            overflow: hidden;
+            
+            position: absolute;
+            top: 0;
+            left: 0;
+            will-change: transform;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease, color 0.4s ease;
+        }
+
+        /* 【上段】項目ラベル */
+        .label {
+            font-size: 17px;
+            font-weight: 900;
+            color: #FFFFFF !important;
+            white-space: nowrap;
+            line-height: 1.0;
+            letter-spacing: -0.5px;
+            text-shadow: 1px 1px 0px #000000;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 1px;
+        }
+        .text-dark { color: #000000 !important; text-shadow: none !important; }
+
+        /* 【中段・上】数値表示 */
+        .value-container {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            line-height: 0.9;
+            margin-top: -2px; 
+        }
+        .value {
+            font-size: 42px;
+            font-family: 'Arial Black', 'Impact', sans-serif;
+            font-weight: 900;
+            line-height: 0.9;
+            letter-spacing: -1.5px;
+        }
+        .unit {
+            font-size: 14px;
+            font-weight: 900;
+            margin-left: 1px;
+            line-height: 0.9;
+        }
+
+        /* 【中段・下】顔文字＋文言 */
+        .status-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            height: 22px;
+            margin-top: -1px;
+            margin-bottom: 2px;
+        }
+        .avatar-box {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .avatar-img {
+            height: 100%;
+            width: 100%;
+            object-fit: contain;
+            border-radius: 50%;
+            filter: drop-shadow(0px 1px 1px rgba(0,0,0,0.6));
+        }
+        .status-text {
+            font-size: 18px;
+            font-weight: 900;
+            font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', sans-serif;
+            white-space: nowrap;
+            line-height: 1.0;
+            letter-spacing: 0.5px;
+        }
+        
+        /* 【下段】時計専用ブラックベルト */
+        .bottom-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            height: 26px;
+        }
+        .bottom-dark {
+            background-color: rgba(0, 0, 0, 0.15) !important;
+            border-top: 1px solid rgba(0,0,0,0.1);
+        }
+        .time-stamp {
+            font-size: 16px;
+            font-family: 'Arial Black', 'Impact', monospace;
+            font-weight: 900;
+            white-space: nowrap;
+            line-height: 1.0;
+            letter-spacing: 0.2px;
+        }
+        .time-dark { color: #000000 !important; text-shadow: none !important; }
+        .time-light { color: #FFFFFF !important; text-shadow: 1px 1px 0px #000000; }
+
+        /* ⑤ 上面ロゴエリア */
+        .logo-block {
+            flex: 0 0 128px !important;
+            width: 128px !important;
+            height: 128px !important;
+            padding: 0 !important; 
+            background-color: #000000 !important;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            border-left: 1px solid #1a1a1a;
+        }
+        .logo-wrapper {
+            width: 128px !important;
+            height: 128px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #000000;
+        }
+        .logo-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            will-change: transform;
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: rotate(0deg);
+        }
     </style>
 </head>
 <body>
 
-    <h1>WBGTサイネージ・判定表示全パターン確認（公式カラー完全準拠）</h1>
+    <div class="signage-container">
+        
+        <div class="side-stage" id="side-stage">
+            
+            <div class="block data-block" id="pane-0">
+                <div class="label data-label">暑さ指数</div>
+                <div class="value-container">
+                    <span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span>
+                </div>
+                <div class="status-area">
+                    <div class="avatar-box"><img src="5.png" id="img-wbgt" class="avatar-img" alt="顔"></div>
+                    <span class="status-text" id="status-wbgt">――</span>
+                </div>
+                <div class="bottom-row" id="bottom-wbgt">
+                    <span class="time-stamp data-time">00/00 00:00</span>
+                </div>
+            </div>
 
-    <h2>1. 【ほぼ安全】（~22.0℃）</h2>
-    <div class="test-frame">
-        <iframe class="test-iframe" src="index.html?test=safe"></iframe>
-    </div>
-    <div class="description-box">
-        <div class="desc-title"><span class="color-dot" style="background:#99FFFF;"></span>ほぼ安全（水色）</div>
-        背景色：#99FFFF / 文字色：黒（反転表示）
+            <div class="block data-block" id="pane-1">
+                <div class="label data-label">現場気温</div>
+                <div class="value-container">
+                    <span class="value" id="val-kion">--.-</span><span class="unit">℃</span>
+                </div>
+                <div class="status-area">
+                    <div class="avatar-box"><img src="5.png" id="img-kion" class="avatar-img" alt="顔"></div>
+                    <span class="status-text" id="status-kion">――</span>
+                </div>
+                <div class="bottom-row" id="bottom-kion">
+                    <span class="time-stamp data-time">00/00 00:00</span>
+                </div>
+            </div>
+
+            <div class="block data-block" id="pane-2">
+                <div class="label data-label">黒球温度</div>
+                <div class="value-container">
+                    <span class="value" id="val-koku">--.-</span><span class="unit">℃</span>
+                </div>
+                <div class="status-area">
+                    <div class="avatar-box"><img src="5.png" id="img-koku" class="avatar-img" alt="顔"></div>
+                    <span class="status-text" id="status-koku">――</span>
+                </div>
+                <div class="bottom-row" id="bottom-koku">
+                    <span class="time-stamp data-time">00/00 00:00</span>
+                </div>
+            </div>
+
+            <div class="block data-block" id="pane-3">
+                <div class="label data-label">現場湿度</div>
+                <div class="value-container">
+                    <span class="value" id="val-shitu">--.-</span><span class="unit">%</span>
+                </div>
+                <div class="status-area">
+                    <div class="avatar-box"><img src="5.png" id="img-shitu" class="avatar-img" alt="顔"></div>
+                    <span class="status-text" id="status-shitu">――</span>
+                </div>
+                <div class="bottom-row" id="bottom-shitu">
+                    <span class="time-stamp data-time">00/00 00:00</span>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="logo-block">
+            <div class="logo-wrapper">
+                <img src="logo.png" id="rotating-logo" alt="ロゴ">
+            </div>
+        </div>
+
     </div>
 
-    <h2>2. 【注意】（22.1℃~ 26.0℃）</h2>
-    <div class="test-frame">
-        <iframe class="test-iframe" src="index.html?test=attention"></iframe>
-    </div>
-    <div class="description-box">
-        <div class="desc-title"><span class="color-dot" style="background:#99FF99;"></span>注意（緑）</div>
-        背景色：#99FF99 / 文字色：黒（反転表示）
-    </div>
+    <script>
+        // ⭐ 関数の外側（グローバル）で確実にパラメータを取得
+        const urlParams = new URLSearchParams(window.location.search);
+        const corpId = urlParams.get('CorpID') || '18016';
+        const loId = urlParams.get('LoID') || '2480';
+        const testParam = urlParams.get('test'); // 'safe', 'attention', 'warning', 'severe', 'danger'
 
-    <h2>3. 【警戒】（26.1℃~29.0℃）</h2>
-    <div class="test-frame">
-        <iframe class="test-iframe" src="index.html?test=warning"></iframe>
-    </div>
-    <div class="description-box">
-        <div class="desc-title"><span class="color-dot" style="background:#FFFF66;"></span>警戒（黄）</div>
-        背景色：#FFFF66 / 文字色：黒（反転表示）
-    </div>
+        const dataUrl = `data/${corpId}/${loId}.json`;
 
-    <h2>4. 【厳重警戒】（29.1℃~32.0℃）</h2>
-    <div class="test-frame">
-        <iframe class="test-iframe" src="index.html?test=severe"></iframe>
-    </div>
-    <div class="description-box">
-        <div class="desc-title"><span class="color-dot" style="background:#FF9933;"></span>厳重警戒（オレンジ）</div>
-        背景色：#FF9933 / 文字色：白
-    </div>
+        function updateClock() {
+            const now = new Date();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const date = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            const timeString = `${month}/${date} ${hours}:${minutes}`;
+            document.querySelectorAll('.data-time').forEach(el => el.textContent = timeString);
+        }
 
-    <h2>5. 【危険】（32.1℃~）</h2>
-    <div class="test-frame">
-        <iframe class="test-iframe" src="index.html?test=danger"></iframe>
-    </div>
-    <div class="description-box">
-        <div class="desc-title"><span class="color-dot" style="background:#FF3333;"></span>危険（赤）</div>
-        背景色：#FF3333 / 文字色：白
-    </div>
+        // 初期配置を設定
+        for (let i = 0; i < 4; i++) {
+            const pane = document.getElementById(`pane-${i}`);
+            pane.style.transform = `translateX(${i * 128}px)`;
+        }
 
+        let step = 0;
+        function rotateSidePanes() {
+            step = (step + 1) % 4;
+            let wbgtPositionIndex = 0;
+
+            for (let i = 0; i < 4; i++) {
+                const pane = document.getElementById(`pane-${i}`);
+                let positionIndex = (i - step + 4) % 4;
+                let leftPosition = positionIndex * 128;
+                
+                pane.style.transform = `translateX(${leftPosition}px)`;
+
+                if (i === 0) {
+                    wbgtPositionIndex = positionIndex;
+                }
+            }
+
+            const logoImg = document.getElementById('rotating-logo');
+            if (logoImg) {
+                const angle = wbgtPositionIndex * -90; 
+                logoImg.style.transform = `rotate(${angle}deg)`;
+            }
+        }
+
+        async function updateSignageData() {
+            try {
+                let wbgtVal = null;
+                let data = { kion: "0.0", koku: "0.0", shitu: "0" };
+                let levelKey = 'safe';
+
+                // ⭐ 判定ロジックの最優先分岐に修正
+                if (testParam) {
+                    levelKey = testParam;
+                    if (testParam === 'danger')    { wbgtVal = 33.5; data = { kion: "35.2", koku: "38.0", shitu: "75" }; }
+                    else if (testParam === 'severe')    { wbgtVal = 30.2; data = { kion: "31.8", koku: "33.5", shitu: "68" }; }
+                    else if (testParam === 'warning')   { wbgtVal = 27.5; data = { kion: "29.0", koku: "29.5", shitu: "60" }; }
+                    else if (testParam === 'attention') { wbgtVal = 24.2; data = { kion: "26.1", koku: "25.0", shitu: "55" }; }
+                    else if (testParam === 'safe')      { wbgtVal = 20.5; data = { kion: "22.0", koku: "21.0", shitu: "48" }; }
+                } else {
+                    const timeStamp = new Date().getTime();
+                    const response = await fetch(`${dataUrl}?r=${timeStamp}`, { cache: 'no-store' });
+                    if (!response.ok) throw new Error('データ通信エラー');
+                    const jsonData = await response.json();
+                    data = jsonData;
+                    wbgtVal = data.wbgt !== "0.0" ? Number(data.wbgt) : null;
+
+                    if (wbgtVal !== null) {
+                        if (wbgtVal >= 32.1) levelKey = 'danger';
+                        else if (wbgtVal >= 29.1) levelKey = 'severe';
+                        else if (wbgtVal >= 26.1) levelKey = 'warning';
+                        else if (wbgtVal >= 22.1) levelKey = 'attention';
+                        else levelKey = 'safe';
+                    }
+                }
+                
+                document.getElementById('val-wbgt').textContent = wbgtVal !== null ? wbgtVal.toFixed(1) : '--.-';
+                document.getElementById('val-kion').textContent = data.kion !== "0.0" ? Number(data.kion).toFixed(1) : '--.-';
+                document.getElementById('val-koku').textContent = data.koku !== "0.0" ? Number(data.koku).toFixed(1) : '--.-';
+                document.getElementById('val-shitu').textContent = data.shitu !== "0" ? Number(data.shitu).toFixed(0) : '--';
+
+                // カラーテーマ設定
+                const themeMap = {
+                    'danger':    { bg: '#FF3333', text: '#FFFFFF', txt: '危 険',    img: '1.png', dark: false },
+                    'severe':    { bg: '#FF9933', text: '#FFFFFF', txt: '厳重警戒',  img: '2.png', dark: false },
+                    'warning':   { bg: '#FFFF66', text: '#000000', txt: '警 戒',    img: '3.png', dark: true  },
+                    'attention': { bg: '#99FF99', text: '#000000', txt: '注 意',    img: '4.png', dark: true  },
+                    'safe':      { bg: '#99FFFF', text: '#000000', txt: 'ほぼ安全',  img: '5.png', dark: true  }
+                };
+
+                const theme = themeMap[levelKey];
+
+                const imgIds = ['img-wbgt', 'img-kion', 'img-koku', 'img-shitu'];
+                imgIds.forEach(id => {
+                    const imgEl = document.getElementById(id);
+                    if (imgEl) imgEl.src = theme.img;
+                });
+
+                document.getElementById('status-wbgt').textContent = theme.txt;
+                document.getElementById('status-kion').textContent = theme.txt;
+                document.getElementById('status-koku').textContent = theme.txt;
+                document.getElementById('status-shitu').textContent = theme.txt;
+
+                document.querySelectorAll('.data-block').forEach(b => {
+                    b.style.backgroundColor = theme.bg;
+                    b.style.color = theme.text;
+                });
+
+                document.querySelectorAll('.data-label').forEach(l => {
+                    if (theme.dark) l.classList.add('text-dark');
+                    else l.classList.remove('text-dark');
+                });
+
+                document.querySelectorAll('.bottom-row').forEach(row => {
+                    if (theme.dark) row.classList.add('bottom-dark');
+                    else row.classList.remove('bottom-dark');
+                });
+
+                document.querySelectorAll('.data-time').forEach(t => {
+                    t.className = theme.dark ? 'time-stamp data-time time-dark' : 'time-stamp data-time time-light';
+                });
+
+            } catch (error) {
+                console.error('データ読み込み失敗:', error);
+            }
+        }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        updateSignageData();
+        setInterval(updateSignageData, 10000);
+
+        setInterval(rotateSidePanes, 5000);
+    </script>
 </body>
 </html>
