@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT環境モニター（ロゴ追従回転版）</title>
+    <title>WBGT環境モニター（基準値修正版）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -64,7 +64,6 @@
             
             position: absolute;
             top: 0;
-            /* イージングを調整してガシャコン感を強化 */
             transition: left 0.6s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.4s ease, color 0.4s ease;
         }
 
@@ -170,7 +169,7 @@
         .time-dark { color: #000000 !important; text-shadow: none !important; }
         .time-light { color: #FFFFFF !important; }
 
-        /* ⑤ 上面ロゴエリア：右端128pxに完全常駐 */
+        /* ⑤ 上面ロゴエリア */
         .logo-block {
             flex: 0 0 128px !important;
             width: 128px !important;
@@ -191,15 +190,12 @@
             justify-content: center;
             background-color: #000000;
         }
-        
-        /* 🔄 ロゴの回転アニメーション用設定 */
         .logo-wrapper img {
             width: 100%;
             height: 100%;
             object-fit: contain;
-            /* 側面の移動（0.6秒）と完全に同期させて滑らかに回転させる */
             transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
-            transform: rotate(0deg); /* 初期値 */
+            transform: rotate(0deg);
         }
     </style>
 </head>
@@ -265,7 +261,9 @@
                 </div>
             </div>
 
-        </div><div class="logo-block">
+        </div>
+
+        <div class="logo-block">
             <div class="logo-wrapper">
                 <img src="logo.png" id="rotating-logo" alt="ロゴ">
             </div>
@@ -291,31 +289,22 @@
             document.querySelectorAll('.data-time').forEach(el => el.textContent = timeString);
         }
 
-        // 🌟 側面移動＆上面ロゴ回転のハイブリッド・ロジック
         let step = 0;
         function rotateSidePanes() {
             step = (step + 1) % 4;
-            
-            let wbgtPositionIndex = 0; // 暑さ指数(pane-0)が今左から何番目の面にいるか
+            let wbgtPositionIndex = 0;
 
             for (let i = 0; i < 4; i++) {
                 const pane = document.getElementById(`pane-${i}`);
-                let positionIndex = (i - step + 4) % 4; // 0, 1, 2, 3 のいずれか
+                let positionIndex = (i - step + 4) % 4;
                 let leftPosition = positionIndex * 128;
                 pane.style.left = `${leftPosition}px`;
 
-                // 暑さ指数(pane-0)の現在の位置インデックスを記憶
                 if (i === 0) {
                     wbgtPositionIndex = positionIndex;
                 }
             }
 
-            // 🎯 暑さ指数(WBGT)がいる位置（方角）に向けて、上面ロゴを回転させる
-            // positionIndex = 0 (1面目・最左) -> 0度 (正面、もしくは基準方向)
-            // positionIndex = 1 (2面目)      -> -90度 (または270度)
-            // positionIndex = 2 (3面目)      -> -180度 (または180度)
-            // positionIndex = 3 (4面目)      -> -270度 (または90度)
-            // ※実機のキューブの「面の並び順」や「ロゴの初期向き」に合わせてマイナスや角度は後から微調整可能です。
             const logoImg = document.getElementById('rotating-logo');
             if (logoImg) {
                 const angle = wbgtPositionIndex * -90; 
@@ -331,20 +320,40 @@
                 
                 const data = await response.json();
                 
-                document.getElementById('val-wbgt').textContent = data.wbgt !== "0.0" ? Number(data.wbgt).toFixed(1) : '--.-';
+                // 数値のパース（0.0はデータ未取得扱いとするロジックを継承）
+                const wbgtVal = data.wbgt !== "0.0" ? Number(data.wbgt) : null;
+                
+                document.getElementById('val-wbgt').textContent = wbgtVal !== null ? wbgtVal.toFixed(1) : '--.-';
                 document.getElementById('val-kion').textContent = data.kion !== "0.0" ? Number(data.kion).toFixed(1) : '--.-';
                 document.getElementById('val-koku').textContent = data.koku !== "0.0" ? Number(data.koku).toFixed(1) : '--.-';
                 document.getElementById('val-shitu').textContent = data.shitu !== "0" ? Number(data.shitu).toFixed(0) : '--';
+
+                // 🌟 判定ロジックをご指定の基準に完全アップデート
+                let levelKey = 'safe'; // デフォルトはほぼ安全
+                
+                if (wbgtVal !== null) {
+                    if (wbgtVal >= 32.1) {
+                        levelKey = 'danger';
+                    } else if (wbgtVal >= 29.1) {
+                        levelKey = 'severe';
+                    } else if (wbgtVal >= 26.1) {
+                        levelKey = 'warning';
+                    } else if (wbgtVal >= 22.1) {
+                        levelKey = 'attention';
+                    } else {
+                        levelKey = 'safe';
+                    }
+                }
 
                 const themeMap = {
                     'danger':    { bg: '#A63A3A', text: '#FFFFFF', txt: '危 険',    img: '1.png', dark: false, filter: true },
                     'severe':    { bg: '#7C3E1E', text: '#FFFFFF', txt: '厳重警戒',  img: '2.png', dark: false, filter: true },
                     'warning':   { bg: '#B7732D', text: '#FFFFFF', txt: '警 戒',    img: '3.png', dark: false, filter: true },
                     'attention': { bg: '#C4F941', text: '#000000', txt: '注 意',    img: '4.png', dark: true,  filter: false },
-                    'safe':      { bg: '#4D666D', text: '#FFFFFF', txt: 'ほぼ安全',  img: '5.png', dark: false, filter: true }
+                    'safe':      { bg: '#00B5D4', text: '#FFFFFF', txt: 'ほぼ安全',  img: '5.png', dark: false, filter: true }
                 };
 
-                const theme = themeMap[data.level] || themeMap['safe'];
+                const theme = themeMap[levelKey];
 
                 const imgIds = ['img-wbgt', 'img-kion', 'img-koku', 'img-shitu'];
                 imgIds.forEach(id => {
@@ -404,7 +413,6 @@
         updateSignageData();
         setInterval(updateSignageData, 10000);
 
-        // 5秒ごとにスライド移動＆ロゴ回転を実行
         setInterval(rotateSidePanes, 5000);
     </script>
 </body>
