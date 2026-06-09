@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT環境モニター（超スムーズローテーション版）</title>
+    <title>WBGT環境モニター（公式カラー完全準拠版）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -62,14 +62,10 @@
             font-family: 'Arial Black', 'Impact', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
             overflow: hidden;
             
-            /* ⭐ 描画負荷を極限まで下げるための初期配置設定 */
             position: absolute;
             top: 0;
             left: 0;
-            
-            /* ⭐ 【ハードウェアアクセラレーション（GPU）】を強制有効化 */
             will-change: transform;
-            /* 🚀 サイネージ表示に最も自然に馴染む最高に滑らかなアニメーション設定 */
             transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease, color 0.4s ease;
         }
 
@@ -136,10 +132,7 @@
             width: 100%;
             object-fit: contain;
             border-radius: 50%;
-            filter: brightness(1.65) drop-shadow(0px 1px 1px rgba(0,0,0,0.8));
-        }
-        .no-filter {
-            filter: drop-shadow(0px 1px 1px rgba(0,0,0,0.8)) !important;
+            filter: drop-shadow(0px 1px 1px rgba(0,0,0,0.6));
         }
         .status-text {
             font-size: 18px;
@@ -160,7 +153,8 @@
             height: 26px;
         }
         .bottom-dark {
-            background-color: rgba(255, 255, 255, 0.5) !important;
+            background-color: rgba(0, 0, 0, 0.15) !important;
+            border-top: 1px solid rgba(0,0,0,0.1);
         }
         .time-stamp {
             font-size: 16px;
@@ -168,12 +162,10 @@
             font-weight: 900;
             white-space: nowrap;
             line-height: 1.0;
-            color: #FFFFFF !important;
-            text-shadow: 1px 1px 0px #000000;
             letter-spacing: 0.2px;
         }
         .time-dark { color: #000000 !important; text-shadow: none !important; }
-        .time-light { color: #FFFFFF !important; }
+        .time-light { color: #FFFFFF !important; text-shadow: 1px 1px 0px #000000; }
 
         /* ⑤ 上面ロゴエリア */
         .logo-block {
@@ -201,7 +193,6 @@
             height: 100%;
             object-fit: contain;
             will-change: transform;
-            /* 🚀 側面のぬるぬる移動（0.8秒）と完璧に呼吸を合わせて美しくスピン */
             transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
             transform: rotate(0deg);
         }
@@ -284,6 +275,9 @@
         const corpId = urlParams.get('CorpID') || '18016';
         const loId = urlParams.get('LoID') || '2480';
 
+        // ⭐ テストページ用パラメータの受け取り判定を追加
+        const testParam = urlParams.get('test');
+
         const dataUrl = `data/${corpId}/${loId}.json`;
 
         function updateClock() {
@@ -313,7 +307,6 @@
                 let positionIndex = (i - step + 4) % 4;
                 let leftPosition = positionIndex * 128;
                 
-                // 🚀 CPU負荷の高いleftをやめ、超高速なGPU translation（translate3dと同等）に完全刷新
                 pane.style.transform = `translateX(${leftPosition}px)`;
 
                 if (i === 0) {
@@ -330,20 +323,37 @@
 
         async function updateSignageData() {
             try {
-                const timeStamp = new Date().getTime();
-                const response = await fetch(`${dataUrl}?r=${timeStamp}`, { cache: 'no-store' });
-                if (!response.ok) throw new Error('データ通信エラー');
-                
-                const data = await response.json();
-                const wbgtVal = data.wbgt !== "0.0" ? Number(data.wbgt) : null;
+                let wbgtVal = null;
+                let data = { kion: "0.0", koku: "0.0", shitu: "0" };
+                let forceLevel = null;
+
+                // ⭐ テストモードの時はダミー数値を代入して動かす
+                if (testParam) {
+                    forceLevel = testParam;
+                    if (testParam === 'danger')    { wbgtVal = 33.5; data = { kion: "35.2", koku: "38.0", shitu: "75" }; }
+                    if (testParam === 'severe')    { wbgtVal = 30.2; data = { kion: "31.8", koku: "33.5", shitu: "68" }; }
+                    if (testParam === 'warning')   { wbgtVal = 27.5; data = { kion: "29.0", koku: "29.5", shitu: "60" }; }
+                    if (testParam === 'attention') { wbgtVal = 24.2; data = { kion: "26.1", koku: "25.0", shitu: "55" }; }
+                    if (testParam === 'safe')      { wbgtVal = 20.5; data = { kion: "22.0", koku: "21.0", shitu: "48" }; }
+                } else {
+                    const timeStamp = new Date().getTime();
+                    const response = await fetch(`${dataUrl}?r=${timeStamp}`, { cache: 'no-store' });
+                    if (!response.ok) throw new Error('データ通信エラー');
+                    const jsonData = await response.json();
+                    data = jsonData;
+                    wbgtVal = data.wbgt !== "0.0" ? Number(data.wbgt) : null;
+                }
                 
                 document.getElementById('val-wbgt').textContent = wbgtVal !== null ? wbgtVal.toFixed(1) : '--.-';
                 document.getElementById('val-kion').textContent = data.kion !== "0.0" ? Number(data.kion).toFixed(1) : '--.-';
                 document.getElementById('val-koku').textContent = data.koku !== "0.0" ? Number(data.koku).toFixed(1) : '--.-';
                 document.getElementById('val-shitu').textContent = data.shitu !== "0" ? Number(data.shitu).toFixed(0) : '--';
 
+                // 判定ロジック
                 let levelKey = 'safe';
-                if (wbgtVal !== null) {
+                if (forceLevel) {
+                    levelKey = forceLevel;
+                } else if (wbgtVal !== null) {
                     if (wbgtVal >= 32.1) levelKey = 'danger';
                     else if (wbgtVal >= 29.1) levelKey = 'severe';
                     else if (wbgtVal >= 26.1) levelKey = 'warning';
@@ -351,12 +361,13 @@
                     else levelKey = 'safe';
                 }
 
+                // 🎯 添付画像の公式カラー通りに完全カラーコード刷新
                 const themeMap = {
-                    'danger':    { bg: '#A63A3A', text: '#FFFFFF', txt: '危 険',    img: '1.png', dark: false, filter: true },
-                    'severe':    { bg: '#7C3E1E', text: '#FFFFFF', txt: '厳重警戒',  img: '2.png', dark: false, filter: true },
-                    'warning':   { bg: '#B7732D', text: '#FFFFFF', txt: '警 戒',    img: '3.png', dark: false, filter: true },
-                    'attention': { bg: '#C4F941', text: '#000000', txt: '注 意',    img: '4.png', dark: true,  filter: false },
-                    'safe':      { bg: '#00B5D4', text: '#FFFFFF', txt: 'ほぼ安全',  img: '5.png', dark: false, filter: true }
+                    'danger':    { bg: '#FF3333', text: '#FFFFFF', txt: '危 険',    img: '1.png', dark: false },
+                    'severe':    { bg: '#FF9933', text: '#FFFFFF', txt: '厳重警戒',  img: '2.png', dark: false },
+                    'warning':   { bg: '#FFFF66', text: '#000000', txt: '警 戒',    img: '3.png', dark: true  },
+                    'attention': { bg: '#99FF99', text: '#000000', txt: '注 意',    img: '4.png', dark: true  },
+                    'safe':      { bg: '#99FFFF', text: '#000000', txt: 'ほぼ安全',  img: '5.png', dark: true  }
                 };
 
                 const theme = themeMap[levelKey];
@@ -364,10 +375,7 @@
                 const imgIds = ['img-wbgt', 'img-kion', 'img-koku', 'img-shitu'];
                 imgIds.forEach(id => {
                     const imgEl = document.getElementById(id);
-                    if (imgEl) {
-                        imgEl.src = theme.img;
-                        imgEl.className = theme.filter ? 'avatar-img' : 'avatar-img no-filter';
-                    }
+                    if (imgEl) imgEl.src = theme.img;
                 });
 
                 document.getElementById('status-wbgt').textContent = theme.txt;
@@ -405,7 +413,6 @@
         updateSignageData();
         setInterval(updateSignageData, 10000);
 
-        // 5秒ごとにスライド移動＆ロゴ回転を実行
         setInterval(rotateSidePanes, 5000);
     </script>
 </body>
