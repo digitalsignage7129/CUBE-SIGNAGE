@@ -3,10 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Expires" content="0">
-    <title>WBGT環境モニター（テスト固定修正版）</title>
+    <title>WBGT環境モニター（顧客説明用デモ専用ページ）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -23,7 +20,7 @@
             align-items: flex-start;
         }
 
-        /* 640x128 絶対固定サイズ */
+        /* 640x128 キューブサイネージ絶対固定サイズ */
         .signage-container {
             display: flex;
             width: 640px !important;
@@ -66,6 +63,7 @@
             top: 0;
             left: 0;
             will-change: transform;
+            /* 🚀 現場視認性を重視したぬるぬる動くGPU加速アニメーション */
             transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease, color 0.4s ease;
         }
 
@@ -264,20 +262,14 @@
 
         <div class="logo-block">
             <div class="logo-wrapper">
-                <img src="logo.png" id="rotating-logo" alt="ロゴ">
+                <img src="logo digital.png" id="rotating-logo" alt="ロゴ">
             </div>
         </div>
 
     </div>
 
     <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const corpId = urlParams.get('CorpID') || '18016';
-        const loId = urlParams.get('LoID') || '2480';
-        const testParam = urlParams.get('test'); 
-
-        const dataUrl = `data/${corpId}/${loId}.json`;
-
+        // 🕒 時計のリアルタイム更新
         function updateClock() {
             const now = new Date();
             const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -289,12 +281,12 @@
             document.querySelectorAll('.data-time').forEach(el => el.textContent = timeString);
         }
 
-        // 初期配置を設定
+        // 🛠️ 4つの面を初期位置に配置
         for (let i = 0; i < 4; i++) {
-            const pane = document.getElementById(`pane-${i}`);
-            pane.style.transform = `translateX(${i * 128}px)`;
+            document.getElementById(`pane-${i}`).style.transform = `translateX(${i * 128}px)`;
         }
 
+        // 🔄 5秒ごとの側面スライド移動＆上面ロゴ回転処理
         let step = 0;
         function rotateSidePanes() {
             step = (step + 1) % 4;
@@ -303,112 +295,91 @@
             for (let i = 0; i < 4; i++) {
                 const pane = document.getElementById(`pane-${i}`);
                 let positionIndex = (i - step + 4) % 4;
-                let leftPosition = positionIndex * 128;
-                
-                pane.style.transform = `translateX(${leftPosition}px)`;
+                pane.style.transform = `translateX(${positionIndex * 128}px)`;
 
-                if (i === 0) {
-                    wbgtPositionIndex = positionIndex;
-                }
+                if (i === 0) wbgtPositionIndex = positionIndex;
             }
 
             const logoImg = document.getElementById('rotating-logo');
             if (logoImg) {
-                const angle = wbgtPositionIndex * -90; 
-                logoImg.style.transform = `rotate(${angle}deg)`;
+                logoImg.style.transform = `rotate(${wbgtPositionIndex * -90}deg)`;
             }
         }
 
-        async function updateSignageData() {
-            try {
-                let wbgtVal = null;
-                let data = { kion: "0.0", koku: "0.0", shitu: "0" };
-                let levelKey = 'safe';
+        // 🎯 12秒ごとに自動で切り替わる「5パターン固定ダミーデータ」（公式5色完全準拠）
+        const demoPatterns = [
+            { level: 'safe',      wbgt: 20.5, kion: 22.0, koku: 21.0, shitu: 48 }, // ①ほぼ安全（水色）
+            { level: 'attention', wbgt: 24.2, kion: 26.1, koku: 25.0, shitu: 55 }, // ②注意（緑）
+            { level: 'warning',   wbgt: 27.5, kion: 29.0, koku: 29.5, shitu: 60 }, // ③警戒（黄）
+            { level: 'severe',    wbgt: 30.2, kion: 31.8, koku: 33.5, shitu: 68 }, // ④厳重警戒（オレンジ）
+            { level: 'danger',    wbgt: 33.5, kion: 35.2, koku: 38.0, shitu: 75 }  // ⑤危険（赤）
+        ];
 
-                // ⭐ 【修正】テストモード時は安全に独立したif-elseチェーンで値を完全マッピング
-                if (testParam) {
-                    levelKey = testParam;
-                    if (testParam === 'danger')         { wbgtVal = 33.5; data = { kion: "35.2", koku: "38.0", shitu: "75" }; }
-                    else if (testParam === 'severe')    { wbgtVal = 30.2; data = { kion: "31.8", koku: "33.5", shitu: "68" }; }
-                    else if (testParam === 'warning')   { wbgtVal = 27.5; data = { kion: "29.0", koku: "29.5", shitu: "60" }; }
-                    else if (testParam === 'attention') { wbgtVal = 24.2; data = { kion: "26.1", koku: "25.0", shitu: "55" }; }
-                    else if (testParam === 'safe')      { wbgtVal = 20.5; data = { kion: "22.0", koku: "21.0", shitu: "48" }; }
-                } else {
-                    // 通常稼働時
-                    const timeStamp = new Date().getTime();
-                    const response = await fetch(`${dataUrl}?r=${timeStamp}`, { cache: 'no-store' });
-                    if (!response.ok) throw new Error('データ通信エラー');
-                    const jsonData = await response.json();
-                    data = jsonData;
-                    wbgtVal = data.wbgt !== "0.0" ? Number(data.wbgt) : null;
+        const themeMap = {
+            'danger':    { bg: '#FF3333', text: '#FFFFFF', txt: '危 険',    img: '1.png', dark: false },
+            'severe':    { bg: '#FF9933', text: '#FFFFFF', txt: '厳重警戒',  img: '2.png', dark: false },
+            'warning':   { bg: '#FFFF66', text: '#000000', txt: '警 戒',    img: '3.png', dark: true  },
+            'attention': { bg: '#99FF99', text: '#000000', txt: '注 意',    img: '4.png', dark: true  },
+            'safe':      { bg: '#99FFFF', text: '#000000', txt: 'ほぼ安全',  img: '5.png', dark: true  }
+        };
 
-                    if (wbgtVal !== null) {
-                        if (wbgtVal >= 32.1) levelKey = 'danger';
-                        else if (wbgtVal >= 29.1) levelKey = 'severe';
-                        else if (wbgtVal >= 26.1) levelKey = 'warning';
-                        else if (wbgtVal >= 22.1) levelKey = 'attention';
-                        else levelKey = 'safe';
-                    }
-                }
-                
-                document.getElementById('val-wbgt').textContent = wbgtVal !== null ? wbgtVal.toFixed(1) : '--.-';
-                document.getElementById('val-kion').textContent = data.kion !== "0.0" ? Number(data.kion).toFixed(1) : '--.-';
-                document.getElementById('val-koku').textContent = data.koku !== "0.0" ? Number(data.koku).toFixed(1) : '--.-';
-                document.getElementById('val-shitu').textContent = data.shitu !== "0" ? Number(data.shitu).toFixed(0) : '--';
+        let currentPatternIndex = 0;
 
-                // カラーテーマ設定（公式画像準拠）
-                const themeMap = {
-                    'danger':    { bg: '#FF3333', text: '#FFFFFF', txt: '危 険',    img: '1.png', dark: false },
-                    'severe':    { bg: '#FF9933', text: '#FFFFFF', txt: '厳重警戒',  img: '2.png', dark: false },
-                    'warning':   { bg: '#FFFF66', text: '#000000', txt: '警 戒',    img: '3.png', dark: true  },
-                    'attention': { bg: '#99FF99', text: '#000000', txt: '注 意',    img: '4.png', dark: true  },
-                    'safe':      { bg: '#99FFFF', text: '#000000', txt: 'ほぼ安全',  img: '5.png', dark: true  }
-                };
+        function changeDemoStage() {
+            const data = demoPatterns[currentPatternIndex];
+            const theme = themeMap[data.level];
 
-                const theme = themeMap[levelKey];
+            // 各面共通のデータ書き換え
+            document.getElementById('val-wbgt').textContent = data.wbgt.toFixed(1);
+            document.getElementById('val-kion').textContent = data.kion.toFixed(1);
+            document.getElementById('val-koku').textContent = data.koku.toFixed(1);
+            document.getElementById('val-shitu').textContent = data.shitu.toFixed(0);
 
-                const imgIds = ['img-wbgt', 'img-kion', 'img-koku', 'img-shitu'];
-                imgIds.forEach(id => {
-                    const imgEl = document.getElementById(id);
-                    if (imgEl) imgEl.src = theme.img;
-                });
+            // 各種要素へのテーマ（色・画像・文言）適用
+            const imgIds = ['img-wbgt', 'img-kion', 'img-koku', 'img-shitu'];
+            imgIds.forEach(id => {
+                const imgEl = document.getElementById(id);
+                if (imgEl) imgEl.src = theme.img;
+            });
 
-                document.getElementById('status-wbgt').textContent = theme.txt;
-                document.getElementById('status-kion').textContent = theme.txt;
-                document.getElementById('status-koku').textContent = theme.txt;
-                document.getElementById('status-shitu').textContent = theme.txt;
+            document.getElementById('status-wbgt').textContent = theme.txt;
+            document.getElementById('status-kion').textContent = theme.txt;
+            document.getElementById('status-koku').textContent = theme.txt;
+            document.getElementById('status-shitu').textContent = theme.txt;
 
-                document.querySelectorAll('.data-block').forEach(b => {
-                    b.style.backgroundColor = theme.bg;
-                    b.style.color = theme.text;
-                });
+            document.querySelectorAll('.data-block').forEach(b => {
+                b.style.backgroundColor = theme.bg;
+                b.style.color = theme.text;
+            });
 
-                document.querySelectorAll('.data-label').forEach(l => {
-                    if (theme.dark) l.classList.add('text-dark');
-                    else l.classList.remove('text-dark');
-                });
+            document.querySelectorAll('.data-label').forEach(l => {
+                if (theme.dark) l.classList.add('text-dark');
+                else l.classList.remove('text-dark');
+            });
 
-                document.querySelectorAll('.bottom-row').forEach(row => {
-                    if (theme.dark) row.classList.add('bottom-dark');
-                    else row.classList.remove('bottom-dark');
-                });
+            document.querySelectorAll('.bottom-row').forEach(row => {
+                if (theme.dark) row.classList.add('bottom-dark');
+                else row.classList.remove('bottom-dark');
+            });
 
-                document.querySelectorAll('.data-time').forEach(t => {
-                    t.className = theme.dark ? 'time-stamp data-time time-dark' : 'time-stamp data-time time-light';
-                });
+            document.querySelectorAll('.data-time').forEach(t => {
+                t.className = theme.dark ? 'time-stamp data-time time-dark' : 'time-stamp data-time time-light';
+            });
 
-            } catch (error) {
-                console.error('データ読み込み失敗:', error);
-            }
+            // 次の判定ステージに進める（危険までいったらほぼ安全に戻るループ）
+            currentPatternIndex = (currentPatternIndex + 1) % demoPatterns.length;
         }
 
+        // 初期実行とタイマー始動
         updateClock();
         setInterval(updateClock, 1000);
 
-        updateSignageData();
-        setInterval(updateSignageData, 10000);
-
+        // 5秒ごとにスライド移動
         setInterval(rotateSidePanes, 5000);
+
+        // 12秒ごとに判定（色・ダミーデータ）を自動変更
+        changeDemoStage();
+        setInterval(changeDemoStage, 12000);
     </script>
 </body>
 </html>
