@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT環境モニター（基準値修正版）</title>
+    <title>WBGT環境モニター（超スムーズローテーション版）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -62,9 +62,15 @@
             font-family: 'Arial Black', 'Impact', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
             overflow: hidden;
             
+            /* ⭐ 描画負荷を極限まで下げるための初期配置設定 */
             position: absolute;
             top: 0;
-            transition: left 0.6s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.4s ease, color 0.4s ease;
+            left: 0;
+            
+            /* ⭐ 【ハードウェアアクセラレーション（GPU）】を強制有効化 */
+            will-change: transform;
+            /* 🚀 サイネージ表示に最も自然に馴染む最高に滑らかなアニメーション設定 */
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease, color 0.4s ease;
         }
 
         /* 【上段】項目ラベル */
@@ -194,7 +200,9 @@
             width: 100%;
             height: 100%;
             object-fit: contain;
-            transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+            will-change: transform;
+            /* 🚀 側面のぬるぬる移動（0.8秒）と完璧に呼吸を合わせて美しくスピン */
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
             transform: rotate(0deg);
         }
     </style>
@@ -205,7 +213,7 @@
         
         <div class="side-stage" id="side-stage">
             
-            <div class="block data-block" id="pane-0" style="left: 0px;">
+            <div class="block data-block" id="pane-0">
                 <div class="label data-label">暑さ指数</div>
                 <div class="value-container">
                     <span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span>
@@ -219,7 +227,7 @@
                 </div>
             </div>
 
-            <div class="block data-block" id="pane-1" style="left: 128px;">
+            <div class="block data-block" id="pane-1">
                 <div class="label data-label">現場気温</div>
                 <div class="value-container">
                     <span class="value" id="val-kion">--.-</span><span class="unit">℃</span>
@@ -233,7 +241,7 @@
                 </div>
             </div>
 
-            <div class="block data-block" id="pane-2" style="left: 256px;">
+            <div class="block data-block" id="pane-2">
                 <div class="label data-label">黒球温度</div>
                 <div class="value-container">
                     <span class="value" id="val-koku">--.-</span><span class="unit">℃</span>
@@ -247,7 +255,7 @@
                 </div>
             </div>
 
-            <div class="block data-block" id="pane-3" style="left: 384px;">
+            <div class="block data-block" id="pane-3">
                 <div class="label data-label">現場湿度</div>
                 <div class="value-container">
                     <span class="value" id="val-shitu">--.-</span><span class="unit">%</span>
@@ -289,6 +297,12 @@
             document.querySelectorAll('.data-time').forEach(el => el.textContent = timeString);
         }
 
+        // 初期配置を設定
+        for (let i = 0; i < 4; i++) {
+            const pane = document.getElementById(`pane-${i}`);
+            pane.style.transform = `translateX(${i * 128}px)`;
+        }
+
         let step = 0;
         function rotateSidePanes() {
             step = (step + 1) % 4;
@@ -298,7 +312,9 @@
                 const pane = document.getElementById(`pane-${i}`);
                 let positionIndex = (i - step + 4) % 4;
                 let leftPosition = positionIndex * 128;
-                pane.style.left = `${leftPosition}px`;
+                
+                // 🚀 CPU負荷の高いleftをやめ、超高速なGPU translation（translate3dと同等）に完全刷新
+                pane.style.transform = `translateX(${leftPosition}px)`;
 
                 if (i === 0) {
                     wbgtPositionIndex = positionIndex;
@@ -319,8 +335,6 @@
                 if (!response.ok) throw new Error('データ通信エラー');
                 
                 const data = await response.json();
-                
-                // 数値のパース（0.0はデータ未取得扱いとするロジックを継承）
                 const wbgtVal = data.wbgt !== "0.0" ? Number(data.wbgt) : null;
                 
                 document.getElementById('val-wbgt').textContent = wbgtVal !== null ? wbgtVal.toFixed(1) : '--.-';
@@ -328,21 +342,13 @@
                 document.getElementById('val-koku').textContent = data.koku !== "0.0" ? Number(data.koku).toFixed(1) : '--.-';
                 document.getElementById('val-shitu').textContent = data.shitu !== "0" ? Number(data.shitu).toFixed(0) : '--';
 
-                // 🌟 判定ロジックをご指定の基準に完全アップデート
-                let levelKey = 'safe'; // デフォルトはほぼ安全
-                
+                let levelKey = 'safe';
                 if (wbgtVal !== null) {
-                    if (wbgtVal >= 32.1) {
-                        levelKey = 'danger';
-                    } else if (wbgtVal >= 29.1) {
-                        levelKey = 'severe';
-                    } else if (wbgtVal >= 26.1) {
-                        levelKey = 'warning';
-                    } else if (wbgtVal >= 22.1) {
-                        levelKey = 'attention';
-                    } else {
-                        levelKey = 'safe';
-                    }
+                    if (wbgtVal >= 32.1) levelKey = 'danger';
+                    else if (wbgtVal >= 29.1) levelKey = 'severe';
+                    else if (wbgtVal >= 26.1) levelKey = 'warning';
+                    else if (wbgtVal >= 22.1) levelKey = 'attention';
+                    else levelKey = 'safe';
                 }
 
                 const themeMap = {
@@ -360,11 +366,7 @@
                     const imgEl = document.getElementById(id);
                     if (imgEl) {
                         imgEl.src = theme.img;
-                        if (theme.filter) {
-                            imgEl.classList.remove('no-filter');
-                        } else {
-                            imgEl.classList.add('no-filter');
-                        }
+                        imgEl.className = theme.filter ? 'avatar-img' : 'avatar-img no-filter';
                     }
                 });
 
@@ -379,27 +381,17 @@
                 });
 
                 document.querySelectorAll('.data-label').forEach(l => {
-                    if (theme.dark) {
-                        l.classList.add('text-dark');
-                    } else {
-                        l.classList.remove('text-dark');
-                    }
+                    if (theme.dark) l.classList.add('text-dark');
+                    else l.classList.remove('text-dark');
                 });
 
                 document.querySelectorAll('.bottom-row').forEach(row => {
-                    if (theme.dark) {
-                        row.classList.add('bottom-dark');
-                    } else {
-                        row.classList.remove('bottom-dark');
-                    }
+                    if (theme.dark) row.classList.add('bottom-dark');
+                    else row.classList.remove('bottom-dark');
                 });
 
                 document.querySelectorAll('.data-time').forEach(t => {
-                    if (theme.dark) {
-                        t.className = 'time-stamp data-time time-dark';
-                    } else {
-                        t.className = 'time-stamp data-time time-light';
-                    }
+                    t.className = theme.dark ? 'time-stamp data-time time-dark' : 'time-stamp data-time time-light';
                 });
 
             } catch (error) {
@@ -413,6 +405,7 @@
         updateSignageData();
         setInterval(updateSignageData, 10000);
 
+        // 5秒ごとにスライド移動＆ロゴ回転を実行
         setInterval(rotateSidePanes, 5000);
     </script>
 </body>
