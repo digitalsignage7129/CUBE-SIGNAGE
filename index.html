@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT環境モニター（側面512px・上面128px完全整合版）</title>
+    <title>WBGT環境モニター（4面完全スライド・上面右端オーバーレイ版）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -25,6 +25,7 @@
 
         /* 💻 全体で 640px × 128px の絶対固定解像度 */
         .signage-container {
+            position: relative; /* 👈 上面ロゴを右端に絶対配置するための基準 */
             display: flex;
             width: 640px !important;
             height: 128px !important;
@@ -36,17 +37,17 @@
             overflow: hidden;
         }
 
-        /* 🔄 側面エリア：512px × 128px（128pxがちょうど4面綺麗に並ぶ空間） */
+        /* 🔄 側面エリア：幅を640pxフルに広げ、ロゴの裏側（512px〜640px）を「ワープ・待機用の隠し部屋」として使います */
         .side-stage {
-            flex: 0 0 512px !important;
-            width: 512px !important;
+            flex: 0 0 640px !important;
+            width: 640px !important;
             height: 128px !important;
             display: flex;
             position: relative;
             overflow: hidden;
         }
 
-        /* 128px正方形ブロック（初期状態はアニメーションなし） */
+        /* 128px正方形ブロック */
         .block {
             flex: 0 0 128px !important; 
             width: 128px !important;
@@ -69,7 +70,7 @@
             transition: background-color 0.4s ease, color 0.4s ease;
         }
 
-        /* 💡 左スライド移動用アニメーションクラス */
+        /* 左スライド移動用アニメーションクラス */
         .smooth-slide {
             transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease, color 0.4s ease !important;
         }
@@ -172,8 +173,11 @@
         .time-dark { color: #000000 !important; text-shadow: none !important; }
         .time-light { color: #FFFFFF !important; text-shadow: 1px 1px 0px #000000; }
 
-        /* 🔝 上面エリア：右端に残る 128px × 128px の完全固定枠 */
+        /* 🔝 上面エリア：右端（512px〜640px）に絶対配置。最前面（z-index: 10）にして裏で側面を循環させます */
         .logo-block {
+            position: absolute;
+            top: 0;
+            right: 0;
             flex: 0 0 128px !important;
             width: 128px !important;
             height: 128px !important;
@@ -182,7 +186,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 10;
+            z-index: 10; /* 👈 側面ブロックより上に重ねる */
             border-left: 1px solid #1a1a1a;
         }
         .logo-wrapper {
@@ -207,7 +211,7 @@
 
     <div class="signage-container">
         
-        <!-- 側面（計512px分）：4つのデータブロックがピッタリ綺麗に整列 -->
+        <!-- 側面（4面=計512px分が表示エリア、残り128pxはロゴの裏の隠し待機スペース） -->
         <div class="side-stage" id="side-stage">
             
             <div class="block data-block smooth-slide" id="pane-0">
@@ -268,7 +272,7 @@
 
         </div>
 
-        <!-- 上面（128px分）：右端に絶対不動の固定配置 -->
+        <!-- 上面（128px分）：右端に絶対配置（側面ブロックの上に覆いかぶさる） -->
         <div class="logo-block">
             <div class="logo-wrapper">
                 <img src="logo.png" id="rotating-logo" alt="ロゴ">
@@ -296,7 +300,7 @@
             document.querySelectorAll('.data-time').forEach(el => el.textContent = timeString);
         }
 
-        // 💡 4つのブロックを初期位置 [0px, 128px, 256px, 384px] にピッタリ配置
+        // 💡 4つのブロックの初期位置を設定 [0px, 128px, 256px, 384px]
         const TOTAL_BLOCKS = 4; 
         let currentPositions = [];
         for (let i = 0; i < TOTAL_BLOCKS; i++) {
@@ -310,7 +314,7 @@
             step = (step + 1) % TOTAL_BLOCKS; 
             let wbgtPositionIndex = 0;
             
-            // 💡 4枚目が左に流れた際、次の待機場所は 512px から引いた「384px（4つ目の位置）」になります
+            // 💡 ロゴの裏側（一番右端）の待機位置は「512px」になります
             const maxRightPosition = (TOTAL_BLOCKS - 1) * 128; 
 
             for (let i = 0; i < TOTAL_BLOCKS; i++) {
@@ -320,7 +324,7 @@
                 let positionIndex = (i - step + TOTAL_BLOCKS) % TOTAL_BLOCKS;
                 let targetLeft = positionIndex * 128;
                 
-                // 💡 左端（0px）から消えたブロックを、右端の待機位置（384px）へノーモーションでワープ搬送
+                // 左端（0px）からフレームアウトしたブロックを、ロゴの裏の待機位置（512px）へノーモーションでワープ
                 if (currentPositions[i] === 0 && targetLeft === maxRightPosition) {
                     pane.classList.remove('smooth-slide');
                     pane.style.transform = `translateX(${targetLeft}px)`;
@@ -339,7 +343,7 @@
                 }
             }
 
-            // 側面のローテーション周期に合わせて、上面ロゴの回転角（90度刻み）をシンクロ
+            // 上面ロゴの回転角（90度刻みで4面に同期）
             const logoImg = document.getElementById('rotating-logo');
             if (logoImg) {
                 const angle = wbgtPositionIndex * -90; 
@@ -437,7 +441,7 @@
         updateSignageData();
         setInterval(updateSignageData, 10000);
 
-        // 5秒ごとに側面4ブロックをローテーション
+        // 5秒ごとにスライドローテーション
         setInterval(rotateSidePanes, 5000);
     </script>
 </body>
