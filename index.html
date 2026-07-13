@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT環境モニター（5等分完全修正版）</title>
+    <title>WBGT環境モニター（側面512px・上面128px完全整合版）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -23,7 +23,7 @@
             align-items: flex-start;
         }
 
-        /* 640x128 絶対固定サイズ */
+        /* 💻 全体で 640px × 128px の絶対固定解像度 */
         .signage-container {
             display: flex;
             width: 640px !important;
@@ -36,10 +36,10 @@
             overflow: hidden;
         }
 
-        /* 🔄 側面データ用のステージ（左側5面分＝640pxに拡張） */
+        /* 🔄 側面エリア：512px × 128px（128pxがちょうど4面綺麗に並ぶ空間） */
         .side-stage {
-            flex: 0 0 640px !important;
-            width: 640px !important;
+            flex: 0 0 512px !important;
+            width: 512px !important;
             height: 128px !important;
             display: flex;
             position: relative;
@@ -66,16 +66,15 @@
             top: 0;
             left: 0;
             will-change: transform;
-            /* 背景色や文字色の変化のみ常時有効化 */
             transition: background-color 0.4s ease, color 0.4s ease;
         }
 
-        /* 💡 左スライド時のみ付与するアニメーションクラス */
+        /* 💡 左スライド移動用アニメーションクラス */
         .smooth-slide {
             transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease, color 0.4s ease !important;
         }
 
-        /* 【上段】項目ラベル */
+        /* 項目ラベル */
         .label {
             font-size: 17px;
             font-weight: 900;
@@ -92,7 +91,7 @@
         }
         .text-dark { color: #000000 !important; text-shadow: none !important; }
 
-        /* 【中段・上】数値表示 */
+        /* 数値表示 */
         .value-container {
             display: flex;
             align-items: baseline;
@@ -114,7 +113,7 @@
             line-height: 0.9;
         }
 
-        /* 【中段・下】顔文字＋文言 */
+        /* 顔文字ステータス */
         .status-area {
             display: flex;
             align-items: center;
@@ -149,7 +148,7 @@
             letter-spacing: 0.5px;
         }
         
-        /* 【下段】時計専用ブラックベルト */
+        /* 下段時計用ベルト */
         .bottom-row {
             display: flex;
             justify-content: center;
@@ -173,7 +172,7 @@
         .time-dark { color: #000000 !important; text-shadow: none !important; }
         .time-light { color: #FFFFFF !important; text-shadow: 1px 1px 0px #000000; }
 
-        /* ⑤ 上面ロゴエリア（ロゴも残す場合はそのまま右端に128pxで配置されます） */
+        /* 🔝 上面エリア：右端に残る 128px × 128px の完全固定枠 */
         .logo-block {
             flex: 0 0 128px !important;
             width: 128px !important;
@@ -208,9 +207,9 @@
 
     <div class="signage-container">
         
+        <!-- 側面（計512px分）：4つのデータブロックがピッタリ綺麗に整列 -->
         <div class="side-stage" id="side-stage">
             
-            <!-- 5つのブロック（IDは pane-0 〜 pane-4） -->
             <div class="block data-block smooth-slide" id="pane-0">
                 <div class="label data-label">暑さ指数</div>
                 <div class="value-container">
@@ -267,23 +266,9 @@
                 </div>
             </div>
 
-            <!-- 5つ目の追加ブロック（例：騒音など、環境に合わせてIDや文言を調整してください） -->
-            <div class="block data-block smooth-slide" id="pane-4">
-                <div class="label data-label">騒音値</div>
-                <div class="value-container">
-                    <span class="value" id="val-noise">--.-</span><span class="unit">dB</span>
-                </div>
-                <div class="status-area">
-                    <div class="avatar-box"><img src="5.png" id="img-noise" class="avatar-img" alt="顔"></div>
-                    <span class="status-text" id="status-noise">――</span>
-                </div>
-                <div class="bottom-row" id="bottom-noise">
-                    <span class="time-stamp data-time">00/00 00:00</span>
-                </div>
-            </div>
-
         </div>
 
+        <!-- 上面（128px分）：右端に絶対不動の固定配置 -->
         <div class="logo-block">
             <div class="logo-wrapper">
                 <img src="logo.png" id="rotating-logo" alt="ロゴ">
@@ -311,8 +296,8 @@
             document.querySelectorAll('.data-time').forEach(el => el.textContent = timeString);
         }
 
-        // 💡 5等分（5ブロック）用の初期位置設定 [0, 128, 256, 384, 512]
-        const TOTAL_BLOCKS = 5; 
+        // 💡 4つのブロックを初期位置 [0px, 128px, 256px, 384px] にピッタリ配置
+        const TOTAL_BLOCKS = 4; 
         let currentPositions = [];
         for (let i = 0; i < TOTAL_BLOCKS; i++) {
             currentPositions.push(i * 128);
@@ -322,9 +307,11 @@
 
         let step = 0;
         function rotateSidePanes() {
-            step = (step + 1) % TOTAL_BLOCKS; // 💡 %5 に修正
+            step = (step + 1) % TOTAL_BLOCKS; 
             let wbgtPositionIndex = 0;
-            const maxRightPosition = (TOTAL_BLOCKS - 1) * 128; // 5つの場合は 512px
+            
+            // 💡 4枚目が左に流れた際、次の待機場所は 512px から引いた「384px（4つ目の位置）」になります
+            const maxRightPosition = (TOTAL_BLOCKS - 1) * 128; 
 
             for (let i = 0; i < TOTAL_BLOCKS; i++) {
                 const pane = document.getElementById(`pane-${i}`);
@@ -333,7 +320,7 @@
                 let positionIndex = (i - step + TOTAL_BLOCKS) % TOTAL_BLOCKS;
                 let targetLeft = positionIndex * 128;
                 
-                // 💡 左端（0px）から右端（512px）へ戻るターゲットの処理（5等分自動計算）
+                // 💡 左端（0px）から消えたブロックを、右端の待機位置（384px）へノーモーションでワープ搬送
                 if (currentPositions[i] === 0 && targetLeft === maxRightPosition) {
                     pane.classList.remove('smooth-slide');
                     pane.style.transform = `translateX(${targetLeft}px)`;
@@ -341,7 +328,7 @@
                     
                     setTimeout(() => {
                         pane.classList.add('smooth-slide');
-                    }, 10);
+                    }, 20);
                 } else {
                     pane.style.transform = `translateX(${targetLeft}px)`;
                     currentPositions[i] = targetLeft;
@@ -352,6 +339,7 @@
                 }
             }
 
+            // 側面のローテーション周期に合わせて、上面ロゴの回転角（90度刻み）をシンクロ
             const logoImg = document.getElementById('rotating-logo');
             if (logoImg) {
                 const angle = wbgtPositionIndex * -90; 
@@ -362,16 +350,16 @@
         async function updateSignageData() {
             try {
                 let wbgtVal = null;
-                let data = { kion: "0.0", koku: "0.0", shitu: "0", noise: "0.0" };
+                let data = { kion: "0.0", koku: "0.0", shitu: "0" };
                 let forceLevel = null;
 
                 if (testParam) {
                     forceLevel = testParam;
-                    if (testParam === 'danger')    { wbgtVal = 33.5; data = { kion: "35.2", koku: "38.0", shitu: "75", noise: "75.5" }; }
-                    if (testParam === 'severe')    { wbgtVal = 30.2; data = { kion: "31.8", koku: "33.5", shitu: "68", noise: "68.2" }; }
-                    if (testParam === 'warning')   { wbgtVal = 27.5; data = { kion: "29.0", koku: "29.5", shitu: "60", noise: "62.0" }; }
-                    if (testParam === 'attention') { wbgtVal = 24.2; data = { kion: "26.1", koku: "25.0", shitu: "55", noise: "55.1" }; }
-                    if (testParam === 'safe')      { wbgtVal = 20.5; data = { kion: "22.0", koku: "21.0", shitu: "48", noise: "45.8" }; }
+                    if (testParam === 'danger')    { wbgtVal = 33.5; data = { kion: "35.2", koku: "38.0", shitu: "75" }; }
+                    if (testParam === 'severe')    { wbgtVal = 30.2; data = { kion: "31.8", koku: "33.5", shitu: "68" }; }
+                    if (testParam === 'warning')   { wbgtVal = 27.5; data = { kion: "29.0", koku: "29.5", shitu: "60" }; }
+                    if (testParam === 'attention') { wbgtVal = 24.2; data = { kion: "26.1", koku: "25.0", shitu: "55" }; }
+                    if (testParam === 'safe')      { wbgtVal = 20.5; data = { kion: "22.0", koku: "21.0", shitu: "48" }; }
                 } else {
                     const timeStamp = new Date().getTime();
                     const response = await fetch(`${dataUrl}?r=${timeStamp}`, { cache: 'no-store' });
@@ -385,10 +373,6 @@
                 document.getElementById('val-kion').textContent = data.kion !== "0.0" ? Number(data.kion).toFixed(1) : '--.-';
                 document.getElementById('val-koku').textContent = data.koku !== "0.0" ? Number(data.koku).toFixed(1) : '--.-';
                 document.getElementById('val-shitu').textContent = data.shitu !== "0" ? Number(data.shitu).toFixed(0) : '--';
-                // 5つ目のデータ表示（JSONに項目がある場合。無ければダミーか削ってください）
-                if (document.getElementById('val-noise')) {
-                    document.getElementById('val-noise').textContent = data.noise !== "0.0" ? Number(data.noise).toFixed(1) : '--.-';
-                }
 
                 let levelKey = 'safe';
                 if (forceLevel) {
@@ -411,13 +395,13 @@
 
                 const theme = themeMap[levelKey];
 
-                const imgIds = ['img-wbgt', 'img-kion', 'img-koku', 'img-shitu', 'img-noise'];
+                const imgIds = ['img-wbgt', 'img-kion', 'img-koku', 'img-shitu'];
                 imgIds.forEach(id => {
                     const imgEl = document.getElementById(id);
                     if (imgEl) imgEl.src = theme.img;
                 });
 
-                const statusIds = ['status-wbgt', 'status-kion', 'status-koku', 'status-shitu', 'status-noise'];
+                const statusIds = ['status-wbgt', 'status-kion', 'status-koku', 'status-shitu'];
                 statusIds.forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.textContent = theme.txt;
@@ -453,6 +437,7 @@
         updateSignageData();
         setInterval(updateSignageData, 10000);
 
+        // 5秒ごとに側面4ブロックをローテーション
         setInterval(rotateSidePanes, 5000);
     </script>
 </body>
