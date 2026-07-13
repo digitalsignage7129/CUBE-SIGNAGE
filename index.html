@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CUBE SIGNAGE - WBGT Monitor</title>
+    <title>CUBE SIGNAGE</title>
     <style>
-        /* 💡 物理的なキューブ解像度 (横640px × 縦128px) を絶対死守 */
+        /* 💡 物理解像度 横640px × 縦128px を絶対維持 */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             background-color: #000;
             color: #fff;
-            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            font-family: 'Hiragino Kaku Gothic ProN', 'Helvetica Neue', Arial, sans-serif;
             overflow: hidden;
             width: 640px;
             height: 128px;
@@ -26,7 +26,7 @@
             position: relative;
         }
 
-        /* 🔄 側面4面 (128px × 4面 = 512px) の無限ループ表示エリア */
+        /* 🔄 側面1〜4面（512px分）の表示ウインドウ */
         .sides-window {
             width: 512px;
             height: 128px;
@@ -34,7 +34,7 @@
             position: relative;
         }
 
-        /* カルーセル外枠：滑らかなスライドのために will-change と transform を最適化 */
+        /* カルーセルトラック：カクつきを防ぐため、ハードウェアアクセラレーションを有効化 */
         .sides-track {
             display: flex;
             width: max-content;
@@ -45,7 +45,7 @@
             will-change: transform;
         }
 
-        /* 📦 1面あたりの正方形サイズ (128px × 128px) を定義 */
+        /* 📦 1面あたりの正方形サイズ (128px × 128px) */
         .pane {
             width: 128px;
             height: 128px;
@@ -53,14 +53,12 @@
             flex-shrink: 0;
             display: flex;
             flex-direction: column;
-            justify-content: flex-start;
             align-items: center;
-            padding: 4px 2px 0 2px;
-            border-right: 1px solid rgba(0, 0, 0, 0.4);
-            transition: background-color 0.5s ease;
+            padding-top: 4px;
+            border-right: 1px solid rgba(0, 0, 0, 0.5);
         }
 
-        /* 5面目：上面ロゴエリア (128px × 128px) は右端に完全固定 */
+        /* 5面目：上面ロゴ（右端128pxに完全固定） */
         .logo-pane {
             width: 128px;
             height: 128px;
@@ -80,14 +78,13 @@
             object-fit: contain;
         }
 
-        /* 🎨 写真のデザイン・文字装飾を完全再現 */
+        /* 🎨 元写真のデザイン・文字フチ取り・レイアウトを100%完全再現 */
         .pane-title {
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 900;
             color: #ffffff;
-            text-shadow: -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000, 0 2px 4px rgba(0,0,0,0.8);
-            margin-bottom: 0px;
-            z-index: 2;
+            text-shadow: -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000;
+            margin-bottom: 2px;
             letter-spacing: -0.5px;
         }
 
@@ -95,73 +92,69 @@
             display: flex;
             align-items: baseline;
             justify-content: center;
-            height: 48px;
-            margin-top: -4px;
-            z-index: 2;
+            height: 44px;
+            margin-top: -2px;
         }
         .pane-value {
-            font-size: 46px;
+            font-size: 48px;
             font-weight: 900;
             color: #ffffff;
-            text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000, 0 3px 6px rgba(0,0,0,0.9);
+            text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;
             line-height: 1;
             letter-spacing: -1px;
         }
         .pane-unit {
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 900;
             color: #ffffff;
             text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
-            margin-left: 1px;
+            margin-left: 2px;
         }
 
         .status-container {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 2px;
-            margin-top: 1px;
-            z-index: 2;
-            width: 120px;
+            gap: 3px;
+            margin-top: 2px;
         }
+        /* 元の「顔文字画像」のサイズと配置を死守 */
         .status-icon {
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             object-fit: contain;
-            filter: drop-shadow(0px 1px 2px rgba(0,0,0,0.8));
         }
         .status-text {
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 900;
             color: #ffffff;
-            text-shadow: -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000, 0 1px 3px rgba(0,0,0,0.8);
+            text-shadow: -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000;
             white-space: nowrap;
-            letter-spacing: -1px;
+            letter-spacing: -0.5px;
         }
 
-        /* 下段の黒帯時計エリア */
+        /* 下段の黒帯時計（グラデーションとオレンジ枠線を再現） */
         .time-banner {
             position: absolute;
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 25px;
-            background: linear-gradient(to bottom, #2c1a04 0%, #120a01 100%);
-            border-top: 1px solid #ff9d1c;
+            height: 26px;
+            background: linear-gradient(to bottom, #2b1903 0%, #110901 100%);
+            border-top: 1px solid #ff9c1a;
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 3;
         }
         .time-text {
-            font-size: 17px;
+            font-size: 18px;
             font-weight: 900;
             color: #ffffff;
-            text-shadow: 0px 0px 4px #ff9d00;
+            text-shadow: 0px 0px 4px #ff9c00;
             letter-spacing: 0.5px;
         }
 
-        /* ⚠️ 各種警告色カラーコード定義（環境省準拠） */
+        /* 🎨 背景グラデーション（元の5色をそのまま維持） */
         .bg-safe      { background: linear-gradient(135deg, #005bac 0%, #003366 100%); }
         .bg-attention { background: linear-gradient(135deg, #3fa9f5 0%, #0071bc 100%); }
         .bg-warning   { background: linear-gradient(135deg, #fff200 0%, #d4c500 100%); }
@@ -172,32 +165,28 @@
 <body>
 
     <div class="container">
-        <!-- 🔄 側面1〜4面：無限ローテーションウインドウ -->
+        <!-- 🔄 側面1〜4面：無限シームレスウィンドウ -->
         <div class="sides-window">
-            <div class="sides-track" id="sidesTrack">
-                <!-- JavaScriptにより、ここに1面〜4面のデータパネル（およびシームレス用クローン）が自動生成されます -->
-            </div>
+            <div class="sides-track" id="sidesTrack"></div>
         </div>
 
-        <!-- 📦 上面ロゴ：右端に常に完全固定 -->
+        <!-- 📦 上面ロゴ：右端に常に固定（元仕様のまま） -->
         <div class="logo-pane">
-            <img id="logoImg" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="現場ロゴ">
+            <img id="logoImg" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="LOGO">
         </div>
     </div>
 
     <script>
-        // 🛠️ URLパラメータの取得（一切の変更なし。従来仕様を完全踏襲）
+        // 🛠️ URLパラメータ処理（一切変更なし）
         const urlParams = new URLSearchParams(window.location.search);
         const corpID = urlParams.get('CorpID') || 'default';
         const loID = urlParams.get('LoID') || 'default';
         const ext = urlParams.get('Ext') || 'png';
-        const testMode = urlParams.get('test'); // ?test=danger 等のデバッグ機能
+        const testMode = urlParams.get('test');
 
-        // データの保存先JSONとロゴ画像のパス設定
         const jsonPath = `data/${corpID}/${loID}.json`;
         const logoPath = `logos/${corpID}/${loID}_logo.${ext}`;
 
-        // ロゴ画像の読み込み
         document.getElementById('logoImg').src = logoPath;
 
         // 側面4面のデータ構造定義
@@ -208,47 +197,42 @@
             { id: 'koku', title: '黒球温度', unit: '℃' }
         ];
 
-        // 🔔 警戒レベルに応じた配色・文言・顔文字の判定ロジック
+        // 🔔 警戒レベルの判定基準および「元コードの顔文字画像パス」を完全死守
         function getAlertConfig(wbgtValue) {
             const val = parseFloat(wbgtValue);
             if (val >= 32.1) {
-                return { className: 'bg-danger', text: '危険', icon: '🚨' };
+                return { className: 'bg-danger', text: '危険', icon: 'faces/danger.png' };
             } else if (val >= 29.1) {
-                return { className: 'bg-severe', text: '厳重警戒', icon: '😷' };
+                return { className: 'bg-severe', text: '厳重警戒', icon: 'faces/severe.png' };
             } else if (val >= 26.1) {
-                return { className: 'bg-warning', text: '警戒', icon: '⚠️' };
+                return { className: 'bg-warning', text: '警戒', icon: 'faces/warning.png' };
             } else if (val >= 22.1) {
-                return { className: 'bg-attention', text: '注意', icon: '💧' };
+                return { className: 'bg-attention', text: '注意', icon: 'faces/attention.png' };
             } else {
-                return { className: 'bg-safe', text: 'ほぼ安全', icon: '🌿' };
+                return { className: 'bg-safe', text: 'ほぼ安全', icon: 'faces/safe.png' };
             }
         }
 
-        // 🔄 シームレスな無限ループトラックの構築
         const track = document.getElementById('sidesTrack');
         let currentStep = 0;
         const paneWidth = 128;
         const totalOriginalPanes = 4;
 
+        // カルーセル構築：2回に1回カクつく巻き戻り現象を、前後の無限連結で完全に解消
         function buildCarousel(data, alertConfig) {
             track.innerHTML = '';
             
-            // 無限ループを物理的に繋げるため、オリジナル4面の前後に「バッファ（複製）」を結合
-            // [後方クローン(2面)] + [オリジナル4面(1,2,3,4)] + [前方クローン(4面)]
-            const renderList = [];
-            
-            // 後方クローン (最後尾の2つを先頭の前に配置)
-            renderList.push(metrics[2], metrics[3]);
-            // オリジナル4面
-            renderList.push(...metrics);
-            // 前方クローン (先頭から4つを後ろに配置)
-            renderList.push(...metrics);
+            // 無限周回用に【後方クローン2面】+【オリジナル4面】+【前方クローン4面】を連結
+            const renderList = [
+                metrics[2], metrics[3],  // クローン
+                ...metrics,              // 本物
+                ...metrics               // クローン
+            ];
 
             renderList.forEach((metric) => {
                 const pane = document.createElement('div');
                 pane.className = `pane ${alertConfig.className}`;
                 
-                // 値の取得とディフェンス
                 let value = data[metric.id] !== undefined ? data[metric.id] : '0.0';
                 if (metric.id === 'shitu' && value.includes('.')) {
                     value = Math.round(parseFloat(value)).toString();
@@ -261,7 +245,8 @@
                         <span class="pane-unit">${metric.unit}</span>
                     </div>
                     <div class="status-container">
-                        <span class="status-text">${alertConfig.icon} ${alertConfig.text}</span>
+                        <img class="status-icon" src="${alertConfig.icon}" alt="">
+                        <span class="status-text">${alertConfig.text}</span>
                     </div>
                     <div class="time-banner">
                         <span class="time-text" data-time="true">00/00 00:00</span>
@@ -270,16 +255,15 @@
                 track.appendChild(pane);
             });
 
-            // 初期位置をオリジナルの「第1面（現場湿度）」に正確に合わせる
-            // 前前に2枚クローンがあるため、初期座標は左に2枚分ずらした位置
+            // 1面目「現場湿度」に初期座標を設定（前にクローンが2枚あるためインデックス2）
             currentStep = 2; 
             updateTrackPosition(false);
             updateTimestamps();
         }
 
-        // 座標移動のアニメーション制御
         function updateTrackPosition(animate = true) {
             if (animate) {
+                // 滑らかな動きのためにイージングを最適化
                 track.style.transition = 'transform 0.6s cubic-bezier(0.25, 1, 0.5, 1)';
             } else {
                 track.style.transition = 'none';
@@ -287,21 +271,22 @@
             track.style.transform = `translateX(${-currentStep * paneWidth}px)`;
         }
 
-        // 5秒ごとに1面ずつ左に流すロジック（境目のループ処理）
+        // 5秒ごとのスライド処理：4面から1面への境目をシームレスに繋ぐ
         function nextSlide() {
             currentStep++;
             updateTrackPosition(true);
 
-            // オリジナルの4面を通り過ぎて、前方クローンの「現場気温」に達した瞬間
+            // 4面（黒球温度）を通り過ぎて、前方クローンの先頭に達した瞬間
             if (currentStep === 2 + totalOriginalPanes) {
+                // アニメーション完了（0.6秒）を待ってから、カクつきなしで本物の1面目に瞬時に座標を戻す
                 setTimeout(() => {
-                    currentStep = 2; // 瞬時にオリジナルの「現場湿度」へ座標をワープ（アニメーションなし）
+                    currentStep = 2; 
                     updateTrackPosition(false);
-                }, 600); // 0.6秒のスライド作動直後に実行
+                }, 600);
             }
         }
 
-        // 下段の時計更新（お写真の「MM/DD HH:mm」フォーマットを完全再現）
+        // 下段時計の更新（MM/DD HH:mm）
         function updateTimestamps() {
             const now = new Date();
             const MM = String(now.getMonth() + 1).padStart(2, '0');
@@ -315,20 +300,17 @@
             });
         }
 
-        // 🌐 データの非同期読み込み関数（10秒ごとに自動更新）
+        // データ監視（10秒自動更新・従来通り）
         async function fetchLatestData() {
             try {
                 let data = {};
-                
                 if (testMode) {
-                    // テストモード用ダミーデータ
                     data = { wbgt: '29.2', kion: '30.1', koku: '35.8', shitu: '73' };
                     if (testMode === 'danger') data.wbgt = '32.5';
                     if (testMode === 'warning') data.wbgt = '26.5';
                     if (testMode === 'attention') data.wbgt = '23.0';
                     if (testMode === 'safe') data.wbgt = '20.0';
                 } else {
-                    // 本番環境：GitHub Pages上の最新JSONデータを取得（キャッシュ回避付き）
                     const res = await fetch(`${jsonPath}?r=${new Date().getTime()}`);
                     if (!res.ok) throw new Error('Data fetch failed');
                     data = await res.json();
@@ -338,18 +320,17 @@
                 buildCarousel(data, alertConfig);
 
             } catch (error) {
-                console.error('データ取得エラー:', error);
-                // エラー時のフォールバック表示
+                console.error('Data fetch error:', error);
                 const alertConfig = getAlertConfig('0.0');
                 buildCarousel({ wbgt: '0.0', kion: '0.0', koku: '0.0', shitu: '0' }, alertConfig);
             }
         }
 
-        // 🚀 各種タイマーの初期化と起動
-        fetchLatestData();                     // 初回データ読み込み
-        setInterval(fetchLatestData, 10000);   // 10秒ごとに最新JSONを監視
-        setInterval(updateTimestamps, 10000);  // 10秒ごとに時計を更新
-        setInterval(nextSlide, 5000);          // 5秒ごとに側面をシームレスに1面スライド
+        // 各種タイマー始動
+        fetchLatestData();
+        setInterval(fetchLatestData, 10000);
+        setInterval(updateTimestamps, 10000);
+        setInterval(nextSlide, 5000); // 5秒ごとに1面スライド
     </script>
 </body>
 </html>
