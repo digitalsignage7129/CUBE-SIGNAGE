@@ -66,7 +66,6 @@
             top: 0;
             left: 0;
             will-change: transform;
-            /* スライド演出用のtransitionを設定 */
             transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease, color 0.4s ease;
         }
 
@@ -290,10 +289,8 @@
             document.querySelectorAll('.data-time').forEach(el => el.textContent = timeString);
         }
 
-        // 各パネルの「現在のX座標」を管理する配列
         let currentPositions = [0, 128, 256, 384];
 
-        // 初期配置を設定
         for (let i = 0; i < 4; i++) {
             const pane = document.getElementById(`pane-${i}`);
             pane.style.transform = `translateX(${currentPositions[i]}px)`;
@@ -309,15 +306,12 @@
                 let positionIndex = (i - step + 4) % 4;
                 let targetLeft = positionIndex * 128;
                 
-                // 💡 前面をすり抜けて戻るのを防ぐロジック
-                // 「現在の位置」が左端（0px）で、「次の目的地」が右端（384px）になるブロックの場合
                 if (currentPositions[i] === 0 && targetLeft === 384) {
-                    // transitionを一時的にOFFにして、アニメーションなしで裏側（右端）へ瞬間移動させる
                     pane.style.transition = 'none';
                     pane.style.transform = `translateX(${targetLeft}px)`;
                     currentPositions[i] = targetLeft;
+                    pane.offsetHeight; // 💡リフローを入れてブラウザのバグを防ぐ
                 } else {
-                    // 通常の左スライド移動（他のパネルと並んで動く）
                     pane.style.transition = 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease, color 0.4s ease';
                     pane.style.transform = `translateX(${targetLeft}px)`;
                     currentPositions[i] = targetLeft;
