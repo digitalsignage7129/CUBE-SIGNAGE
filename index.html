@@ -66,6 +66,7 @@
             top: 0;
             left: 0;
             will-change: transform;
+            /* スライド演出用のtransitionを設定 */
             transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease, color 0.4s ease;
         }
 
@@ -274,8 +275,6 @@
         const urlParams = new URLSearchParams(window.location.search);
         const corpId = urlParams.get('CorpID') || '18016';
         const loId = urlParams.get('LoID') || '2480';
-
-        // ⭐ テストページ用パラメータの受け取り判定を追加
         const testParam = urlParams.get('test');
 
         const dataUrl = `data/${corpId}/${loId}.json`;
@@ -291,10 +290,13 @@
             document.querySelectorAll('.data-time').forEach(el => el.textContent = timeString);
         }
 
+        // 各パネルの「現在のX座標」を管理する配列
+        let currentPositions = [0, 128, 256, 384];
+
         // 初期配置を設定
         for (let i = 0; i < 4; i++) {
             const pane = document.getElementById(`pane-${i}`);
-            pane.style.transform = `translateX(${i * 128}px)`;
+            pane.style.transform = `translateX(${currentPositions[i]}px)`;
         }
 
         let step = 0;
@@ -305,9 +307,21 @@
             for (let i = 0; i < 4; i++) {
                 const pane = document.getElementById(`pane-${i}`);
                 let positionIndex = (i - step + 4) % 4;
-                let leftPosition = positionIndex * 128;
+                let targetLeft = positionIndex * 128;
                 
-                pane.style.transform = `translateX(${leftPosition}px)`;
+                // 💡 前面をすり抜けて戻るのを防ぐロジック
+                // 「現在の位置」が左端（0px）で、「次の目的地」が右端（384px）になるブロックの場合
+                if (currentPositions[i] === 0 && targetLeft === 384) {
+                    // transitionを一時的にOFFにして、アニメーションなしで裏側（右端）へ瞬間移動させる
+                    pane.style.transition = 'none';
+                    pane.style.transform = `translateX(${targetLeft}px)`;
+                    currentPositions[i] = targetLeft;
+                } else {
+                    // 通常の左スライド移動（他のパネルと並んで動く）
+                    pane.style.transition = 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease, color 0.4s ease';
+                    pane.style.transform = `translateX(${targetLeft}px)`;
+                    currentPositions[i] = targetLeft;
+                }
 
                 if (i === 0) {
                     wbgtPositionIndex = positionIndex;
@@ -327,7 +341,6 @@
                 let data = { kion: "0.0", koku: "0.0", shitu: "0" };
                 let forceLevel = null;
 
-                // ⭐ テストモードの時はダミー数値を代入して動かす
                 if (testParam) {
                     forceLevel = testParam;
                     if (testParam === 'danger')    { wbgtVal = 33.5; data = { kion: "35.2", koku: "38.0", shitu: "75" }; }
@@ -349,7 +362,6 @@
                 document.getElementById('val-koku').textContent = data.koku !== "0.0" ? Number(data.koku).toFixed(1) : '--.-';
                 document.getElementById('val-shitu').textContent = data.shitu !== "0" ? Number(data.shitu).toFixed(0) : '--';
 
-                // 判定ロジック
                 let levelKey = 'safe';
                 if (forceLevel) {
                     levelKey = forceLevel;
@@ -361,7 +373,6 @@
                     else levelKey = 'safe';
                 }
 
-                // 🎯 添付画像の公式カラー通りに完全カラーコード刷新
                 const themeMap = {
                     'danger':    { bg: '#FF3333', text: '#FFFFFF', txt: '危 険',    img: '1.png', dark: false },
                     'severe':    { bg: '#FF9933', text: '#FFFFFF', txt: '厳重警戒',  img: '2.png', dark: false },
