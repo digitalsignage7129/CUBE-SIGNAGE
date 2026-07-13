@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT環境モニター（純粋CSSシームレス・ループ版）</title>
+    <title>WBGT環境モニター（純粋CSSシームレス・ロゴ透過回転版）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -49,8 +49,6 @@
             width: 1024px !important;
             height: 128px !important;
             will-change: transform;
-            
-            /* 👇 ここでCSSアニメーションを指定（20秒で1周） */
             animation: seamless-slide 20s infinite;
         }
 
@@ -60,7 +58,7 @@
             25%, 45% { transform: translateX(-128px); }
             50%, 70% { transform: translateX(-256px); }
             75%, 95% { transform: translateX(-384px); }
-            100%     { transform: translateX(-512px); } /* 到達した瞬間 0% にシームレスに巻き戻る */
+            100%     { transform: translateX(-512px); }
         }
 
         /* 128px正方形ブロック */
@@ -179,31 +177,38 @@
         .time-dark { color: #000000 !important; text-shadow: none !important; }
         .time-light { color: #FFFFFF !important; text-shadow: 1px 1px 0px #000000; }
 
-        /* 🔝 上面エリア（128px幅） 常に右端固定 */
+        /* 🔝 上面ロゴエリア（512px〜640px）：背景は完全な黒に固定 */
         .logo-block {
             flex: 0 0 128px !important;
             width: 128px !important;
             height: 128px !important;
             padding: 0 !important; 
-            background-color: #000000 !important;
+            background-color: #000000 !important; /* 背景は絶対に黒 */
             display: flex;
             justify-content: center;
             align-items: center;
             border-left: 1px solid #1a1a1a;
+            position: relative;
+            overflow: hidden;
         }
+        
         .logo-wrapper {
-            width: 128px !important;
-            height: 128px !important;
+            width: 100%;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
         }
+
         .logo-wrapper img {
-            width: 100%;
-            height: 100%;
+            width: 90%; /* 回転時に四隅がハミ出さないように少しだけ縮小 */
+            height: 90%;
             object-fit: contain;
+            
+            /* 💡 画像の黒い背景部分を「透明」にして、赤いロゴマークだけを抽出する処理 */
+            mix-blend-mode: screen; 
+            
             will-change: transform;
-            /* 側面の動きと完全に同期して回るCSSアニメーション */
             animation: rotate-logo 20s infinite;
         }
 
@@ -222,7 +227,6 @@
         
         <!-- 側面4面分の「窓」 -->
         <div class="side-stage">
-            <!-- 継ぎ目なく流すための8連トラック（オリジナル4面 ＋ クローン4面） -->
             <div class="scroll-track">
                 
                 <!-- 【オリジナル 1〜4面】 -->
@@ -266,7 +270,7 @@
                     <div class="bottom-row bottom-shitu"><span class="time-stamp data-time">00/00 00:00</span></div>
                 </div>
 
-                <!-- 【ループ用クローン 5〜8面（1〜4と全く同じ内容）】 -->
+                <!-- 【ループ用クローン 5〜8面】 -->
                 <div class="block data-block">
                     <div class="label data-label">暑さ指数</div>
                     <div class="value-container"><span class="value val-wbgt">--.-</span><span class="unit">℃</span></div>
@@ -326,7 +330,6 @@
         const testParam = urlParams.get('test');
         const dataUrl = `data/${corpId}/${loId}.json`;
 
-        // ユーティリティ関数：該当する全クラス（オリジナルとクローンの両方）を一斉更新
         function updateTextByClass(className, text) {
             document.querySelectorAll(className).forEach(el => el.textContent = text);
         }
@@ -367,7 +370,6 @@
                     wbgtVal = data.wbgt !== "0.0" ? Number(data.wbgt) : null;
                 }
                 
-                // クラス指定で8面分すべてを一括更新
                 updateTextByClass('.val-wbgt', wbgtVal !== null ? wbgtVal.toFixed(1) : '--.-');
                 updateTextByClass('.val-kion', data.kion !== "0.0" ? Number(data.kion).toFixed(1) : '--.-');
                 updateTextByClass('.val-koku', data.koku !== "0.0" ? Number(data.koku).toFixed(1) : '--.-');
@@ -394,11 +396,9 @@
 
                 const theme = themeMap[levelKey];
 
-                // アイコンとテキストを一括更新
                 ['.img-wbgt', '.img-kion', '.img-koku', '.img-shitu'].forEach(cls => updateSrcByClass(cls, theme.img));
                 ['.status-wbgt', '.status-kion', '.status-koku', '.status-shitu'].forEach(cls => updateTextByClass(cls, theme.txt));
 
-                // 全ブロックの背景色・文字色
                 document.querySelectorAll('.data-block').forEach(b => {
                     b.style.backgroundColor = theme.bg;
                     b.style.color = theme.text;
@@ -428,8 +428,6 @@
 
         updateSignageData();
         setInterval(updateSignageData, 10000);
-
-        // ※スライドアニメーションはすべてCSSで行うため、JavaScriptの回転処理（setInterval）は削除しました。
     </script>
 </body>
 </html>
