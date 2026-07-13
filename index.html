@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT環境モニター（5面クローン・完全同期ループ版）</title>
+    <title>WBGT環境モニター（4面完全独立スライド・黒画面解消版）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -37,7 +37,7 @@
             overflow: hidden;
         }
 
-        /* 🔄 側面エリア：5つ目のダミーが入るため、幅を 640px フルに確保 */
+        /* 🔄 側面エリア：幅を640pxフルに広げ、右端のロゴの裏（512px〜640px）をワープ先として使用 */
         .side-stage {
             flex: 0 0 640px !important;
             width: 640px !important;
@@ -47,7 +47,7 @@
             overflow: hidden;
         }
 
-        /* 128px正方形ブロック（初期状態はアニメーションあり） */
+        /* 128px正方形ブロック */
         .block {
             flex: 0 0 128px !important; 
             width: 128px !important;
@@ -67,13 +67,11 @@
             top: 0;
             left: 0;
             will-change: transform;
-            /* 💡 個別のワープではなく全体を一斉に滑らかに動かすためのトランジション設定 */
-            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease, color 0.4s ease;
         }
 
-        /* ⚡ 一斉引き戻し（ワープ）用のノーアニメーションクラス */
-        .no-transition {
-            transition: none !important;
+        /* アニメーション用のクラス（動く時だけJSで付与） */
+        .smooth-slide {
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease, color 0.4s ease !important;
         }
 
         /* 項目ラベル */
@@ -174,7 +172,7 @@
         .time-dark { color: #000000 !important; text-shadow: none !important; }
         .time-light { color: #FFFFFF !important; text-shadow: 1px 1px 0px #000000; }
 
-        /* 🔝 上面エリア：右端固定、最前面（z-index: 10） */
+        /* 🔝 上面エリア：右端（512px〜640px）に絶対配置。最前面（z-index: 10） */
         .logo-block {
             position: absolute;
             top: 0;
@@ -212,7 +210,7 @@
 
     <div class="signage-container">
         
-        <!-- 側面：4つの実データ ＋ 1つのクローン(pane-4) の計5面構成 -->
+        <!-- 側面（4つのブロックがロゴの裏を使って独立ループ） -->
         <div class="side-stage" id="side-stage">
             
             <div class="block data-block" id="pane-0">
@@ -263,22 +261,9 @@
                 <div class="bottom-row" id="bottom-shitu"><span class="time-stamp data-time">00/00 00:00</span></div>
             </div>
 
-            <!-- 💡 5つ目のクローンブロック（「暑さ指数」と全く同じデータがリアルタイム同期します） -->
-            <div class="block data-block" id="pane-4">
-                <div class="label data-label">暑さ指数</div>
-                <div class="value-container">
-                    <span class="value" id="val-wbgt-clone">--.-</span><span class="unit">℃</span>
-                </div>
-                <div class="status-area">
-                    <div class="avatar-box"><img src="5.png" id="img-wbgt-clone" class="avatar-img" alt="顔"></div>
-                    <span class="status-text" id="status-wbgt-clone">――</span>
-                </div>
-                <div class="bottom-row" id="bottom-wbgt-clone"><span class="time-stamp data-time">00/00 00:00</span></div>
-            </div>
-
         </div>
 
-        <!-- 上面（128px分）：右端に絶対配置（5つ目のクローンブロックの真上に重なる） -->
+        <!-- 上面（128px分）：右端に絶対配置 -->
         <div class="logo-block">
             <div class="logo-wrapper">
                 <img src="logo.png" id="rotating-logo" alt="ロゴ">
@@ -306,53 +291,50 @@
             document.querySelectorAll('.data-time').forEach(el => el.textContent = timeString);
         }
 
-        // 💡 全5枚を等間隔で初期配置 [0px, 128px, 256px, 384px, 512px]
-        const TOTAL_PANES = 5;
-        let currentStep = 0;
+        // 💡 4つのブロックの現在位置（X座標）を配列で厳密に管理
+        const TOTAL_BLOCKS = 4; 
+        let positions = [0, 128, 256, 384];
+        let logoRotation = 0;
 
-        function initPositions() {
-            for (let i = 0; i < TOTAL_PANES; i++) {
-                const pane = document.getElementById(`pane-${i}`);
-                if (pane) {
-                    pane.classList.add('no-transition'); // ワープ時はアニメーションを切る
-                    pane.style.transform = `translateX(${i * 128}px)`;
-                    // リフローを起こして即時反映
-                    pane.offsetHeight;
-                    pane.classList.remove('no-transition');
-                }
+        // 初期配置
+        for (let i = 0; i < TOTAL_BLOCKS; i++) {
+            const pane = document.getElementById(`pane-${i}`);
+            if (pane) {
+                pane.style.transform = `translateX(${positions[i]}px)`;
+                // 初期時はスムーズ移動クラスをつけておく
+                pane.classList.add('smooth-slide');
             }
         }
 
         function rotateSidePanes() {
-            currentStep++;
-
-            // 💡 1マス（128px分）全員を一斉に左へスライド移動
-            for (let i = 0; i < TOTAL_PANES; i++) {
-                const pane = document.getElementById(`pane-${i}`);
-                if (pane) {
-                    const nextLeft = (i - currentStep) * 128;
-                    pane.style.transform = `translateX(${nextLeft}px)`;
-                }
-            }
-
-            // 上面ロゴの回転（スライド段階に合わせて90度ずつ回す）
+            // ロゴの回転角度を進める
+            logoRotation -= 90;
             const logoImg = document.getElementById('rotating-logo');
-            if (logoImg) {
-                logoImg.style.transform = `rotate(${currentStep * -90}deg)`;
-            }
+            if (logoImg) logoImg.style.transform = `rotate(${logoRotation}deg)`;
 
-            // 💡 4回スライドして「1周（512px分）」動ききったら、ノーモーションで初期位置へ全員同時に戻す
-            if (currentStep === 4) {
-                setTimeout(() => {
-                    currentStep = 0;
-                    initPositions();
-                    if (logoImg) {
-                        logoImg.classList.add('no-transition');
-                        logoImg.style.transform = `rotate(0deg)`;
-                        logoImg.offsetHeight;
-                        logoImg.classList.remove('no-transition');
-                    }
-                }, 850); // アニメーション時間（800ms）の直後に実行
+            // 全ブロックを1マス分（-128px）左に移動させる
+            for (let i = 0; i < TOTAL_BLOCKS; i++) {
+                const pane = document.getElementById(`pane-${i}`);
+                if (!pane) continue;
+
+                positions[i] -= 128;
+                pane.style.transform = `translateX(${positions[i]}px)`;
+
+                // 💡 左端（-128px）に滑り落ちたブロックを、アニメーション終了後に右端へワープさせる
+                if (positions[i] === -128) {
+                    setTimeout(() => {
+                        // アニメーションを一時的に切る
+                        pane.classList.remove('smooth-slide');
+                        // ロゴの裏側の待機位置（384pxの右隣＝512px）へ瞬間移動
+                        positions[i] = 512;
+                        pane.style.transform = `translateX(512px)`;
+                        
+                        // ハードウェアのレンダリングを考慮して少し待ってからアニメーションクラスを再付与
+                        setTimeout(() => {
+                            pane.classList.add('smooth-slide');
+                        }, 50);
+                    }, 850); // スライド時間（800ms）の直後
+                }
             }
         }
 
@@ -378,11 +360,7 @@
                     wbgtVal = data.wbgt !== "0.0" ? Number(data.wbgt) : null;
                 }
                 
-                // 💡 実データと5枚目のクローンデータの両方に値を書き込む
-                const displayWbgt = wbgtVal !== null ? wbgtVal.toFixed(1) : '--.-';
-                document.getElementById('val-wbgt').textContent = displayWbgt;
-                document.getElementById('val-wbgt-clone').textContent = displayWbgt;
-
+                document.getElementById('val-wbgt').textContent = wbgtVal !== null ? wbgtVal.toFixed(1) : '--.-';
                 document.getElementById('val-kion').textContent = data.kion !== "0.0" ? Number(data.kion).toFixed(1) : '--.-';
                 document.getElementById('val-koku').textContent = data.koku !== "0.0" ? Number(data.koku).toFixed(1) : '--.-';
                 document.getElementById('val-shitu').textContent = data.shitu !== "0" ? Number(data.shitu).toFixed(0) : '--';
@@ -408,14 +386,13 @@
 
                 const theme = themeMap[levelKey];
 
-                // クローン枠も含めて画像とテキストを一括更新
-                const imgIds = ['img-wbgt', 'img-kion', 'img-koku', 'img-shitu', 'img-wbgt-clone'];
+                const imgIds = ['img-wbgt', 'img-kion', 'img-koku', 'img-shitu'];
                 imgIds.forEach(id => {
                     const imgEl = document.getElementById(id);
                     if (imgEl) imgEl.src = theme.img;
                 });
 
-                const statusIds = ['status-wbgt', 'status-kion', 'status-koku', 'status-shitu', 'status-wbgt-clone'];
+                const statusIds = ['status-wbgt', 'status-kion', 'status-koku', 'status-shitu'];
                 statusIds.forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.textContent = theme.txt;
@@ -445,16 +422,13 @@
             }
         }
 
-        // 初期配置実行
-        initPositions();
-
         updateClock();
         setInterval(updateClock, 1000);
 
         updateSignageData();
         setInterval(updateSignageData, 10000);
 
-        // 5秒ごとに盤面全体を一斉スライド
+        // 5秒ごとにスライド実行
         setInterval(rotateSidePanes, 5000);
     </script>
 </body>
