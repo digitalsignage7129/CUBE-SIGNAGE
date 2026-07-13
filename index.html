@@ -6,7 +6,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Expires" content="0">
-    <title>WBGT環境モニター（公式カラー完全準拠版）</title>
+    <title>WBGT環境モニター（5等分完全修正版）</title>
     <style>
         * {
             box-sizing: border-box;
@@ -36,17 +36,17 @@
             overflow: hidden;
         }
 
-        /* 🔄 側面データ用のステージ（左側4面分＝512px） */
+        /* 🔄 側面データ用のステージ（左側5面分＝640pxに拡張） */
         .side-stage {
-            flex: 0 0 512px !important;
-            width: 512px !important;
+            flex: 0 0 640px !important;
+            width: 640px !important;
             height: 128px !important;
             display: flex;
             position: relative;
             overflow: hidden;
         }
 
-        /* 128px正方形ブロック */
+        /* 128px正方形ブロック（初期状態はアニメーションなし） */
         .block {
             flex: 0 0 128px !important; 
             width: 128px !important;
@@ -66,7 +66,13 @@
             top: 0;
             left: 0;
             will-change: transform;
-            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease, color 0.4s ease;
+            /* 背景色や文字色の変化のみ常時有効化 */
+            transition: background-color 0.4s ease, color 0.4s ease;
+        }
+
+        /* 💡 左スライド時のみ付与するアニメーションクラス */
+        .smooth-slide {
+            transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease, color 0.4s ease !important;
         }
 
         /* 【上段】項目ラベル */
@@ -167,7 +173,7 @@
         .time-dark { color: #000000 !important; text-shadow: none !important; }
         .time-light { color: #FFFFFF !important; text-shadow: 1px 1px 0px #000000; }
 
-        /* ⑤ 上面ロゴエリア */
+        /* ⑤ 上面ロゴエリア（ロゴも残す場合はそのまま右端に128pxで配置されます） */
         .logo-block {
             flex: 0 0 128px !important;
             width: 128px !important;
@@ -204,7 +210,8 @@
         
         <div class="side-stage" id="side-stage">
             
-            <div class="block data-block" id="pane-0">
+            <!-- 5つのブロック（IDは pane-0 〜 pane-4） -->
+            <div class="block data-block smooth-slide" id="pane-0">
                 <div class="label data-label">暑さ指数</div>
                 <div class="value-container">
                     <span class="value" id="val-wbgt">--.-</span><span class="unit">℃</span>
@@ -218,7 +225,7 @@
                 </div>
             </div>
 
-            <div class="block data-block" id="pane-1">
+            <div class="block data-block smooth-slide" id="pane-1">
                 <div class="label data-label">現場気温</div>
                 <div class="value-container">
                     <span class="value" id="val-kion">--.-</span><span class="unit">℃</span>
@@ -232,7 +239,7 @@
                 </div>
             </div>
 
-            <div class="block data-block" id="pane-2">
+            <div class="block data-block smooth-slide" id="pane-2">
                 <div class="label data-label">黒球温度</div>
                 <div class="value-container">
                     <span class="value" id="val-koku">--.-</span><span class="unit">℃</span>
@@ -246,7 +253,7 @@
                 </div>
             </div>
 
-            <div class="block data-block" id="pane-3">
+            <div class="block data-block smooth-slide" id="pane-3">
                 <div class="label data-label">現場湿度</div>
                 <div class="value-container">
                     <span class="value" id="val-shitu">--.-</span><span class="unit">%</span>
@@ -256,6 +263,21 @@
                     <span class="status-text" id="status-shitu">――</span>
                 </div>
                 <div class="bottom-row" id="bottom-shitu">
+                    <span class="time-stamp data-time">00/00 00:00</span>
+                </div>
+            </div>
+
+            <!-- 5つ目の追加ブロック（例：騒音など、環境に合わせてIDや文言を調整してください） -->
+            <div class="block data-block smooth-slide" id="pane-4">
+                <div class="label data-label">騒音値</div>
+                <div class="value-container">
+                    <span class="value" id="val-noise">--.-</span><span class="unit">dB</span>
+                </div>
+                <div class="status-area">
+                    <div class="avatar-box"><img src="5.png" id="img-noise" class="avatar-img" alt="顔"></div>
+                    <span class="status-text" id="status-noise">――</span>
+                </div>
+                <div class="bottom-row" id="bottom-noise">
                     <span class="time-stamp data-time">00/00 00:00</span>
                 </div>
             </div>
@@ -289,30 +311,38 @@
             document.querySelectorAll('.data-time').forEach(el => el.textContent = timeString);
         }
 
-        let currentPositions = [0, 128, 256, 384];
-
-        for (let i = 0; i < 4; i++) {
+        // 💡 5等分（5ブロック）用の初期位置設定 [0, 128, 256, 384, 512]
+        const TOTAL_BLOCKS = 5; 
+        let currentPositions = [];
+        for (let i = 0; i < TOTAL_BLOCKS; i++) {
+            currentPositions.push(i * 128);
             const pane = document.getElementById(`pane-${i}`);
-            pane.style.transform = `translateX(${currentPositions[i]}px)`;
+            if (pane) pane.style.transform = `translateX(${i * 128}px)`;
         }
 
         let step = 0;
         function rotateSidePanes() {
-            step = (step + 1) % 4;
+            step = (step + 1) % TOTAL_BLOCKS; // 💡 %5 に修正
             let wbgtPositionIndex = 0;
+            const maxRightPosition = (TOTAL_BLOCKS - 1) * 128; // 5つの場合は 512px
 
-            for (let i = 0; i < 4; i++) {
+            for (let i = 0; i < TOTAL_BLOCKS; i++) {
                 const pane = document.getElementById(`pane-${i}`);
-                let positionIndex = (i - step + 4) % 4;
+                if (!pane) continue;
+
+                let positionIndex = (i - step + TOTAL_BLOCKS) % TOTAL_BLOCKS;
                 let targetLeft = positionIndex * 128;
                 
-                if (currentPositions[i] === 0 && targetLeft === 384) {
-                    pane.style.transition = 'none';
+                // 💡 左端（0px）から右端（512px）へ戻るターゲットの処理（5等分自動計算）
+                if (currentPositions[i] === 0 && targetLeft === maxRightPosition) {
+                    pane.classList.remove('smooth-slide');
                     pane.style.transform = `translateX(${targetLeft}px)`;
                     currentPositions[i] = targetLeft;
-                    pane.offsetHeight; // 💡リフローを入れてブラウザのバグを防ぐ
+                    
+                    setTimeout(() => {
+                        pane.classList.add('smooth-slide');
+                    }, 10);
                 } else {
-                    pane.style.transition = 'transform 0.8s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.4s ease, color 0.4s ease';
                     pane.style.transform = `translateX(${targetLeft}px)`;
                     currentPositions[i] = targetLeft;
                 }
@@ -332,16 +362,16 @@
         async function updateSignageData() {
             try {
                 let wbgtVal = null;
-                let data = { kion: "0.0", koku: "0.0", shitu: "0" };
+                let data = { kion: "0.0", koku: "0.0", shitu: "0", noise: "0.0" };
                 let forceLevel = null;
 
                 if (testParam) {
                     forceLevel = testParam;
-                    if (testParam === 'danger')    { wbgtVal = 33.5; data = { kion: "35.2", koku: "38.0", shitu: "75" }; }
-                    if (testParam === 'severe')    { wbgtVal = 30.2; data = { kion: "31.8", koku: "33.5", shitu: "68" }; }
-                    if (testParam === 'warning')   { wbgtVal = 27.5; data = { kion: "29.0", koku: "29.5", shitu: "60" }; }
-                    if (testParam === 'attention') { wbgtVal = 24.2; data = { kion: "26.1", koku: "25.0", shitu: "55" }; }
-                    if (testParam === 'safe')      { wbgtVal = 20.5; data = { kion: "22.0", koku: "21.0", shitu: "48" }; }
+                    if (testParam === 'danger')    { wbgtVal = 33.5; data = { kion: "35.2", koku: "38.0", shitu: "75", noise: "75.5" }; }
+                    if (testParam === 'severe')    { wbgtVal = 30.2; data = { kion: "31.8", koku: "33.5", shitu: "68", noise: "68.2" }; }
+                    if (testParam === 'warning')   { wbgtVal = 27.5; data = { kion: "29.0", koku: "29.5", shitu: "60", noise: "62.0" }; }
+                    if (testParam === 'attention') { wbgtVal = 24.2; data = { kion: "26.1", koku: "25.0", shitu: "55", noise: "55.1" }; }
+                    if (testParam === 'safe')      { wbgtVal = 20.5; data = { kion: "22.0", koku: "21.0", shitu: "48", noise: "45.8" }; }
                 } else {
                     const timeStamp = new Date().getTime();
                     const response = await fetch(`${dataUrl}?r=${timeStamp}`, { cache: 'no-store' });
@@ -355,6 +385,10 @@
                 document.getElementById('val-kion').textContent = data.kion !== "0.0" ? Number(data.kion).toFixed(1) : '--.-';
                 document.getElementById('val-koku').textContent = data.koku !== "0.0" ? Number(data.koku).toFixed(1) : '--.-';
                 document.getElementById('val-shitu').textContent = data.shitu !== "0" ? Number(data.shitu).toFixed(0) : '--';
+                // 5つ目のデータ表示（JSONに項目がある場合。無ければダミーか削ってください）
+                if (document.getElementById('val-noise')) {
+                    document.getElementById('val-noise').textContent = data.noise !== "0.0" ? Number(data.noise).toFixed(1) : '--.-';
+                }
 
                 let levelKey = 'safe';
                 if (forceLevel) {
@@ -377,16 +411,17 @@
 
                 const theme = themeMap[levelKey];
 
-                const imgIds = ['img-wbgt', 'img-kion', 'img-koku', 'img-shitu'];
+                const imgIds = ['img-wbgt', 'img-kion', 'img-koku', 'img-shitu', 'img-noise'];
                 imgIds.forEach(id => {
                     const imgEl = document.getElementById(id);
                     if (imgEl) imgEl.src = theme.img;
                 });
 
-                document.getElementById('status-wbgt').textContent = theme.txt;
-                document.getElementById('status-kion').textContent = theme.txt;
-                document.getElementById('status-koku').textContent = theme.txt;
-                document.getElementById('status-shitu').textContent = theme.txt;
+                const statusIds = ['status-wbgt', 'status-kion', 'status-koku', 'status-shitu', 'status-noise'];
+                statusIds.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = theme.txt;
+                });
 
                 document.querySelectorAll('.data-block').forEach(b => {
                     b.style.backgroundColor = theme.bg;
