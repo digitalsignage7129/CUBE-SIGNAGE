@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CUBE SIGNAGE</title>
     <style>
-        /* 💡 物理解像度 横640px × 縦128px を絶対維持 */
+        /* 💡 物理画面サイズ 横640px × 縦128px を絶対維持 */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             background-color: #000;
@@ -34,7 +34,7 @@
             position: relative;
         }
 
-        /* カルーセルトラック：カクつきを防ぐため、ハードウェアアクセラレーションを有効化 */
+        /* カルーセルトラック：カクつきのない滑らかな移動のための設定 */
         .sides-track {
             display: flex;
             width: max-content;
@@ -54,8 +54,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding-top: 4px;
-            border-right: 1px solid rgba(0, 0, 0, 0.5);
+            padding-top: 6px;
+            border-right: 1px solid rgba(0, 0, 0, 0.4);
         }
 
         /* 5面目：上面ロゴ（右端128pxに完全固定） */
@@ -78,12 +78,16 @@
             object-fit: contain;
         }
 
-        /* 🎨 元写真のデザイン・文字フチ取り・レイアウトを100%完全再現 */
+        /* 🎨 【重要】お写真の太い黒フチ・フォントサイズを完全に再現 */
         .pane-title {
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 900;
             color: #ffffff;
-            text-shadow: -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000;
+            /* 4方向＋斜め方向にも影を重ねてパキッとした極太フチ取りを実現 */
+            text-shadow: 
+                -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000,
+                -2px 0px 0 #000, 2px 0px 0 #000, 0px -2px 0 #000, 0px 2px 0 #000,
+                -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
             margin-bottom: 2px;
             letter-spacing: -0.5px;
         }
@@ -93,47 +97,53 @@
             align-items: baseline;
             justify-content: center;
             height: 44px;
-            margin-top: -2px;
+            margin-top: -4px;
         }
         .pane-value {
-            font-size: 48px;
+            font-size: 52px;
             font-weight: 900;
             color: #ffffff;
-            text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;
+            text-shadow: 
+                -2.5px -2.5px 0 #000, 2.5px -2.5px 0 #000, -2.5px 2.5px 0 #000, 2.5px 2.5px 0 #000,
+                -2.5px 0px 0 #000, 2.5px 0px 0 #000, 0px -2.5px 0 #000, 0px 2.5px 0 #000;
             line-height: 1;
-            letter-spacing: -1px;
+            letter-spacing: -1.5px;
         }
         .pane-unit {
             font-size: 16px;
             font-weight: 900;
             color: #ffffff;
-            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
-            margin-left: 2px;
+            text-shadow: -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000;
+            margin-left: 1px;
         }
 
+        /* 全ての面に正しく並ぶ画像と文字のコンテナ */
         .status-container {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 3px;
+            gap: 4px;
             margin-top: 2px;
+            height: 22px;
         }
-        /* 元の「顔文字画像」のサイズと配置を死守 */
+        /* お写真の顔文字画像のサイズ感 */
         .status-icon {
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             object-fit: contain;
         }
         .status-text {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: 900;
             color: #ffffff;
-            text-shadow: -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000;
+            text-shadow: 
+                -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000,
+                -2px 0px 0 #000, 2px 0px 0 #000, 0px -2px 0 #000, 0px 2px 0 #000;
             white-space: nowrap;
             letter-spacing: -0.5px;
         }
 
-        /* 下段の黒帯時計（グラデーションとオレンジ枠線を再現） */
+        /* 下段の黒帯時計（グラデーションと太字） */
         .time-banner {
             position: absolute;
             bottom: 0;
@@ -147,14 +157,15 @@
             align-items: center;
         }
         .time-text {
-            font-size: 18px;
+            font-size: 19px;
             font-weight: 900;
             color: #ffffff;
-            text-shadow: 0px 0px 4px #ff9c00;
+            text-shadow: 
+                -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000, 1.5px 1.5px 0 #000;
             letter-spacing: 0.5px;
         }
 
-        /* 🎨 背景グラデーション（元の5色をそのまま維持） */
+        /* 🎨 背景グラデーション（お写真のオレンジなど、元の5色をそのまま維持） */
         .bg-safe      { background: linear-gradient(135deg, #005bac 0%, #003366 100%); }
         .bg-attention { background: linear-gradient(135deg, #3fa9f5 0%, #0071bc 100%); }
         .bg-warning   { background: linear-gradient(135deg, #fff200 0%, #d4c500 100%); }
@@ -170,7 +181,7 @@
             <div class="sides-track" id="sidesTrack"></div>
         </div>
 
-        <!-- 📦 上面ロゴ：右端に常に固定（元仕様のまま） -->
+        <!-- 📦 上面ロゴ：右端に常に固定 -->
         <div class="logo-pane">
             <img id="logoImg" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="LOGO">
         </div>
@@ -197,7 +208,7 @@
             { id: 'koku', title: '黒球温度', unit: '℃' }
         ];
 
-        // 🔔 警戒レベルの判定基準および「元コードの顔文字画像パス」を完全死守
+        // 🔔 警戒レベルに応じた背景色・文字・顔文字画像パス（すべての面で共通使用）
         function getAlertConfig(wbgtValue) {
             const val = parseFloat(wbgtValue);
             if (val >= 32.1) {
@@ -218,7 +229,7 @@
         const paneWidth = 128;
         const totalOriginalPanes = 4;
 
-        // カルーセル構築：2回に1回カクつく巻き戻り現象を、前後の無限連結で完全に解消
+        // カルーセル構築：4面から1面への切り替わりで「絶対にカクつかない」無限ループ構造
         function buildCarousel(data, alertConfig) {
             track.innerHTML = '';
             
@@ -238,6 +249,7 @@
                     value = Math.round(parseFloat(value)).toString();
                 }
 
+                // 🛠️ すべての面に元の顔文字画像（status-icon）と警告テキストを正しく配置
                 pane.innerHTML = `
                     <div class="pane-title">${metric.title}</div>
                     <div class="value-container">
@@ -255,7 +267,7 @@
                 track.appendChild(pane);
             });
 
-            // 1面目「現場湿度」に初期座標を設定（前にクローンが2枚あるためインデックス2）
+            // 初期位置を「現場湿度」に設定（インデックス2）
             currentStep = 2; 
             updateTrackPosition(false);
             updateTimestamps();
@@ -263,7 +275,6 @@
 
         function updateTrackPosition(animate = true) {
             if (animate) {
-                // 滑らかな動きのためにイージングを最適化
                 track.style.transition = 'transform 0.6s cubic-bezier(0.25, 1, 0.5, 1)';
             } else {
                 track.style.transition = 'none';
@@ -271,14 +282,14 @@
             track.style.transform = `translateX(${-currentStep * paneWidth}px)`;
         }
 
-        // 5秒ごとのスライド処理：4面から1面への境目をシームレスに繋ぐ
+        // 5秒ごとのスライド処理：2回に1回カクつく現象を完全に排除
         function nextSlide() {
             currentStep++;
             updateTrackPosition(true);
 
-            // 4面（黒球温度）を通り過ぎて、前方クローンの先頭に達した瞬間
+            // 4面（黒球温度）を通り過ぎて、前方クローンの先頭（現場湿度）に切り替わった瞬間
             if (currentStep === 2 + totalOriginalPanes) {
-                // アニメーション完了（0.6秒）を待ってから、カクつきなしで本物の1面目に瞬時に座標を戻す
+                // スルッと移動しきった直後（0.6秒後）に、アニメーションなしで本物の1面目に位置を戻す
                 setTimeout(() => {
                     currentStep = 2; 
                     updateTrackPosition(false);
@@ -300,7 +311,7 @@
             });
         }
 
-        // データ監視（10秒自動更新・従来通り）
+        // データ非同期監視
         async function fetchLatestData() {
             try {
                 let data = {};
@@ -326,11 +337,11 @@
             }
         }
 
-        // 各種タイマー始動
+        // タイマー始動
         fetchLatestData();
         setInterval(fetchLatestData, 10000);
         setInterval(updateTimestamps, 10000);
-        setInterval(nextSlide, 5000); // 5秒ごとに1面スライド
+        setInterval(nextSlide, 5000);
     </script>
 </body>
 </html>
